@@ -52,20 +52,18 @@ Options:
 
     -l --log <communication_log_file>       Write hid communication (input reports and output reports) to a file.
 """
-def get_button():
+def get_button(joystick):
     # todo: - hats
     for event in pygame.event.get(): # User did something.
         if event.type == pygame.JOYBUTTONDOWN:
-            None
+                buttons = joystick.get_numbuttons()
+                for i in range(buttons):
+                    button = joystick.get_button(i)
+                    if button == 1:
+                        return i
         if event.type == pygame.JOYBUTTONUP:
             None    
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    buttons = joystick.get_numbuttons()
-    for i in range(buttons):
-        button = joystick.get_button(i)
-        if button == 1:
-            return i
+
     '''
     hats = joystick.get_numhats()
     for i in range(hats):
@@ -81,16 +79,54 @@ def init_relais():
 
     pygame.init()
     pygame.joystick.init()
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
 
     button_strings = ['a', 'b', 'x', 'y', 'up', 'down', 'left', 'right', 'minus', 'plus', 'home', 'capture', 'l', 'r', 'zl', 'zr', 'l_stick', 'r_stick']
+    '''
+    0 - B
+    1 - A
+    2 - Y
+    3 - X
+    4 - L
+    5 - R
+    6 - Minus
+    7 - Plus
+    8 - Home
+    9 - l_stick
+    10 - r_stick
+    '''
+
+    '''
     buttons = {}    
     for button in button_strings:
         pressed = 0
         print("Press {0}".format(button))        
         while not pressed:
-            buttons[button] = get_button()
+            buttons[button] = get_button(joystick)
             pressed = buttons[button]
         time.sleep(0.5)
+    '''
+    buttons = {
+        'a': 1,
+        'b': 0,
+        'x': 3,
+        'y': 2,
+        'up': 8,
+        'down': 8,
+        'left': 8,
+        'right': 8,
+        'minus': 6,
+        'plus': 7,
+        'home': 8,
+        'capture': 8,
+        'l': 4,
+        'r': 5,
+        'zl': 8,
+        'zr': 8,
+        'l_stick': 9,
+        'r_stick': 10
+    }
     return buttons
 
 async def relais(controller_state):
