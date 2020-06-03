@@ -281,6 +281,7 @@ async def _main(args):
 
         controller_state = protocol.get_controller_state()
 
+        await relais(controller_state)
         # Create command line interface and add some extra commands
         cli = ControllerCLI(controller_state)
 
