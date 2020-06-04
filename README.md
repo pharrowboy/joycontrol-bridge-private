@@ -23,7 +23,7 @@ sudo apt install python3-dbus libhidapi-hidraw0
 
 - Clone the repository and install the joycontrol package to get missing dependencies (Note: Controller script needs super user rights, so python packages must be installed as root). In the joycontrol folder run:
 ```bash
-git clone https://github.com/z80z80z80/joycontrol.git
+git clone https://github.com/z80z80z80/joycontrol-bridge.git
 cd joycontrol
 sudo pip install .
 ```
