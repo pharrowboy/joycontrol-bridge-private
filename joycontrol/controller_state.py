@@ -217,6 +217,19 @@ async def button_update(controller_state, button, value):
     # send report
     await controller_state.send()    
 
+async def stick_update(controller_state, stick, values):
+    if stick == 'l_stick_analog':
+        stick_state = controller_state.l_stick_state
+    elif stick == 'r_stick_analog':
+        stick_state = controller_state.r_stick_state        
+    
+    # update stick state
+    stick_state.set_h(values['h'])
+    stick_state.set_v(values['v'])    
+
+    # send report
+    await controller_state.send()
+
 class _StickCalibration:
     def __init__(self, h_center, v_center, h_max_above_center, v_max_above_center, h_max_below_center, v_max_below_center):
         self.h_center = h_center

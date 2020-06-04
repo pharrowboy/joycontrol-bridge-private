@@ -14,7 +14,7 @@ from aioconsole import ainput
 from joycontrol import logging_default as log, utils
 from joycontrol.command_line_interface import ControllerCLI
 from joycontrol.controller import Controller
-from joycontrol.controller_state import ControllerState, button_push, button_update
+from joycontrol.controller_state import ControllerState, button_push, button_update, stick_update
 from joycontrol.memory import FlashMemory
 from joycontrol.protocol import controller_protocol_factory
 from joycontrol.server import create_hid_server
@@ -52,98 +52,100 @@ Options:
 
     -l --log <communication_log_file>       Write hid communication (input reports and output reports) to a file.
 """
-def get_button(joystick):
-    # todo: - hats
-    for event in pygame.event.get(): # User did something.
-        if event.type == pygame.JOYBUTTONDOWN:
-                buttons = joystick.get_numbuttons()
-                for i in range(buttons):
-                    button = joystick.get_button(i)
-                    if button == 1:
-                        return i
-        if event.type == pygame.JOYBUTTONUP:
-            None    
-
-    '''
-    hats = joystick.get_numhats()
-    for i in range(hats):
-        hat = joystick.get_hats(i)
-        for j in range(2): 
-            if hat[j] != 0:
-                return [j, True] # return number of the button and if it's a hat key (True) or normal key (False)
-    '''
 
 def init_relais():
-    # todo: - analog to button conversion
-    #       - analog axis
+    # todo: - button layout parsing from config file
+    #       - basic GUI to show/generate config file + to start/stop the script
 
     pygame.init()
     pygame.joystick.init()
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
 
-    button_strings = ['a', 'b', 'x', 'y', 'up', 'down', 'left', 'right', 'minus', 'plus', 'home', 'capture', 'l', 'r', 'zl', 'zr', 'l_stick', 'r_stick']
-    '''
-    0 - B
-    1 - A
-    2 - Y
-    3 - X
-    4 - L
-    5 - R
-    6 - Minus
-    7 - Plus
-    8 - Home
-    9 - l_stick
-    10 - r_stick
-    '''
-
-    '''
-    buttons = {}    
-    for button in button_strings:
-        pressed = 0
-        print("Press {0}".format(button))        
-        while not pressed:
-            buttons[button] = get_button(joystick)
-            pressed = buttons[button]
-        time.sleep(0.5)
-    '''
     buttons = {
         'a': 1,
         'b': 0,
         'x': 3,
         'y': 2,
-        'up': 8,
-        'down': 8,
-        'left': 8,
-        'right': 8,
-        'minus': 6,
-        'plus': 7,
-        'home': 8,
-        'capture': 8,
-        'l': 4,
-        'r': 5,
-        'zl': 8,
-        'zr': 8,
+        'minus':    6,
+        'plus':     7,
+        'home':     8,
+        #'capture':  ,
+        'l':    4,
+        'r':    5,
         'l_stick': 9,
         'r_stick': 10
+    }   
+
+    analogs = {
+        'l_stick_analog': [0, 1], # [horizontal axis, vertical axis] for analog sticks
+        'r_stick_analog': [3, 4],
+        'zl':   [2, -0.5], # [axis, threshold] for analog axes to be converted to buttons
+        'zr':   [5, -0.5],
     }
-    return buttons
+
+    hat_id = 0
+
+    return buttons, analogs, hat_id
 
 async def relais(controller_state):
-    buttons = init_relais()
+    buttons, analogs, hat_id = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
+
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
+    skip = 0
     while True:
+        skip += 1
         for event in pygame.event.get(): # User did something.
-            if event.type == pygame.JOYBUTTONDOWN:
-                None
-            elif event.type == pygame.JOYBUTTONUP:
-                None        
+            if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
+                for button_id in list(buttons.keys()):        
+                    val = joystick.get_button(button_id)
+                    await button_update(controller_state, buttons[button_id], val)            
+            
+            # this is working but can get unresponsive if axes are moved to frequently (too many events in the queue to be processed fast)
+            # I'll leave this commented out for better responsiveness in games like mario kart. 
+            # If you want to use your xbox/playstation controller as a pro controller, consider using something like the 8bitdo adapters, you'll have more fun this way.
 
-        for button_id in list(buttons.keys()):        
-            val = joystick.get_button(button_id)
-            await button_update(controller_state, buttons[button_id], val)
+            #elif event.type == pygame.JOYAXISMOTION and skip%5 == 0:
+            #    for key in analogs.keys():
+            #        if key[-6:] == 'analog': # analog sticks 
+            #            val_h = joystick.get_axis(analogs[key][0])                         
+            #            val_v = joystick.get_axis(analogs[key][1])
+
+            #            vals = {}
+            #            vals['h'] = abs(int(((val_h + 1) / 2) * 4096) - 1) # converts to the range of [0, 4096) 
+            #            vals['v'] = abs(int(((-1 * val_v + 1) / 2) * 4096) - 1) # converts to the range of [0, 4096) + inversion of the vertical axis
+                                                                                # inversion might be an issue for other controllers...
+
+             #           await stick_update(controller_state, key, vals)
+
+             #       else: # analog triggers -> button conversion
+             #           threshold = analogs[key][1]
+             #           if joystick.get_axis(analogs[key][0]) > threshold:
+             #               await button_update(controller_state, key, 1)
+             #           else:
+             #               await button_update(controller_state, key, 0)            
+
+            elif event.type == pygame.JOYHATMOTION:
+                hats = joystick.get_hat(hat_id)
+                if hats[0] == 0: # left/right is unpressed 
+                    await button_update(controller_state, 'left', 0)
+                    await button_update(controller_state, 'right', 0)
+                elif hats[0] == 1: # right is pressed
+                    await button_update(controller_state, 'right', 1)
+                elif hats[0] == -1: # left is pressed
+                    await button_update(controller_state, 'left', 1)
+
+                if hats[1] == 0: # up/down is unpressed
+                    await button_update(controller_state, 'up', 0)
+                    await button_update(controller_state, 'down', 0)
+                elif hats[1] == 1: # up is pressed
+                    await button_update(controller_state, 'up', 1)
+                elif hats[1] == -1: # down is pressed
+                    await button_update(controller_state, 'down', 1)
+
+        time.sleep(0.001)
 
 async def test_controller_buttons(controller_state: ControllerState):
     """
