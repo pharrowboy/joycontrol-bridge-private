@@ -6,6 +6,7 @@
 
 import aiofiles
 import enum
+import struct
 
 
 class JoystickEvent:
