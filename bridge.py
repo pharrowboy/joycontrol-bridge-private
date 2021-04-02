@@ -43,7 +43,7 @@ async def init_relais():
         16: 'right',
     }
     if not os.path.exists("/dev/input/js0"):
-        print("Please connect any controller! Waiting...")
+        logger.warn("Please connect any controller! Waiting...")
 
     while not os.path.exists("/dev/input/js0"):
         await asyncio.sleep(1)
@@ -83,6 +83,7 @@ async def _main(args):
                                                       device_id=args.device_id)
         controller_state = protocol.get_controller_state()
         await controller_state.connect()
+        logger.info("Connected!")
         protocol.frequency.value = 0.001
         try:
             await relais(protocol, controller_state)

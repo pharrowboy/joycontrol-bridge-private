@@ -48,7 +48,7 @@ class ControllerProtocol(BaseProtocol):
         # This event gets triggered once the Switch assigns a player number to the controller and accepts user inputs
         self.sig_set_player_lights = asyncio.Event()
 
-        self.frequency = Value("i")
+        self.frequency = Value("f")
         self.frequency.value = 0.015
 
     async def send_controller_state(self):
