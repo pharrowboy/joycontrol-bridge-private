@@ -87,7 +87,7 @@ async def _main(args):
         controller_state = protocol.get_controller_state()
         await controller_state.connect()
         logger.info("Connected!")
-        protocol.frequency.value = 0.001
+        protocol.frequency.value = 0.004
         try:
             await relais(protocol, controller_state)
         finally:
