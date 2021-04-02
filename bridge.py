@@ -108,26 +108,31 @@ async def relais(controller_state):
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
     skip = 0
+    button_id = -1
     while True:
         skip += 1
         event = pygame.event.wait()
         print("[user_input] ", event)
-        if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
-            for button_id in list(buttons.keys()):
-                val = joystick.get_button(button_id)
-                await button_update(controller_state, buttons[button_id], val)
-        elif event.type == pygame.JOYAXISMOTION and skip % 5 == 0:
-            for key in analogs.keys():
-                if key[-6:] == 'analog':  # analog sticks
-                    val_h = joystick.get_axis(analogs[key][0])
-                    val_v = joystick.get_axis(analogs[key][1])
-                    vals = {}
-                    # converts to the range of [0, 4096)
-                    vals['h'] = abs(int(((val_h + 1) / 2) * 4096) - 1)
-                    # converts to the range of [0, 4096) + inversion of the vertical axis
-                    vals['v'] = abs(int(((-1 * val_v + 1) / 2) * 4096) - 1)
-                    # inversion might be an issue for other controllers...
-                    await stick_update(controller_state, key, vals)
+        try:
+            if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
+                for button_id in list(buttons.keys()):
+                    val = joystick.get_button(button_id)
+                    await button_update(controller_state, buttons[button_id], val)
+            elif event.type == pygame.JOYAXISMOTION and skip % 5 == 0:
+                for key in analogs.keys():
+                    if key[-6:] == 'analog':  # analog sticks
+                        val_h = joystick.get_axis(analogs[key][0])
+                        val_v = joystick.get_axis(analogs[key][1])
+                        vals = {}
+                        # converts to the range of [0, 4096)
+                        vals['h'] = abs(int(((val_h + 1) / 2) * 4096) - 1)
+                        # converts to the range of [0, 4096) + inversion of the vertical axis
+                        vals['v'] = abs(int(((-1 * val_v + 1) / 2) * 4096) - 1)
+                        # inversion might be an issue for other controllers...
+                        await stick_update(controller_state, key, vals)
+        except pygame.error as e:
+            print("Processing button ID ", button_id)
+            raise e
 
 
 async def test_controller_buttons(controller_state: ControllerState):
