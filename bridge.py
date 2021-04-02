@@ -7,14 +7,13 @@ import os
 import sys
 import time
 
+import aiofiles
+import hid
 import joystick
 
-from aioconsole import ainput
-
 from joycontrol import logging_default as log, utils
-from joycontrol.command_line_interface import ControllerCLI
 from joycontrol.controller import Controller
-from joycontrol.controller_state import ControllerState, button_push, button_update, stick_update
+from joycontrol.controller_state import ControllerState
 from joycontrol.memory import FlashMemory
 from joycontrol.protocol import controller_protocol_factory
 from joycontrol.server import create_hid_server
@@ -23,41 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 async def init_relais():
-    pygame.init()
-    id = -1
-    controller = None
-
-    while controller is None:
-        for device in hid.enumerate(0, 0):
-            # looking for devices matching Nintendo's vendor id and JoyCon product id
-            if device['vendor_id'] == VENDOR_ID and device['product_id'] in (PRODUCT_ID_JL, PRODUCT_ID_JR, PRODUCT_ID_PC):
-                controller = device
-                break
-        else:
-            await asyncio.sleep(2)
-
-    while True:
-        try:
-            pygame.joystick.init()
-            count = pygame.joystick.get_count()
-            print(count, "controllers detected.")
-            for id in range(count):
-                device = pygame.joystick.Joystick(id)
-                print(f"{id}: {describe_joystick(device)}")
-                device.quit()
-            if count > 0:
-                num = int(input("Controller >> ").rstrip())
-                if num < 0 or num >= count:
-                    print(num, "is out of range!")
-                else:
-                    pygame.joystick.Joystick(num).quit()
-                    break
-        except pygame.error as e:
-            pass
-        pygame.joystick.quit()
-        time.sleep(0.5)
-        continue
-
     # Pro Controller Keymap
     buttons = {
         0: 'b',
@@ -78,8 +42,13 @@ async def init_relais():
         15: 'left',
         16: 'right',
     }
+    if not exists("/dev/input/js0"):
+        print("Please connect any controller! Waiting...")
 
-    return buttons, id
+    while not exists("/dev/input/js0"):
+        await asyncio.sleep(1)
+
+    return buttons, 0
 
 
 async def relais(protocol, controller_state):
