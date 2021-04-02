@@ -57,39 +57,40 @@ def init_relais():
     # todo: - button layout parsing from config file
     #       - basic GUI to show/generate config file + to start/stop the script
 
+    pygame.init()
     while True:
         try:
-            pygame.init()
             pygame.joystick.init()
             joystick = pygame.joystick.Joystick(0)
+            break
         except pygame.error as e:
+            pygame.joystick.quit()
             print("init_relais: Retrying...")
             print(e)
             time.sleep(1)
             continue
-        break
     joystick.init()
 
     buttons = {
-        'a': 1,
-        'b': 0,
+        'a': 2,
+        'b': 1,
         'x': 3,
-        'y': 2,
-        'minus':    6,
-        'plus':     7,
-        'home':     8,
+        'y': 4,
+        'minus':    9,
+        'plus':     10,
+        'home':     11,
         #'capture':  ,
-        'l':    4,
-        'r':    5,
-        'l_stick': 9,
-        'r_stick': 10
+        'l':    5,
+        'r':    6,
+        'l_stick': 12,
+        'r_stick': 13
     }   
 
     analogs = {
-        'l_stick_analog': [0, 1], # [horizontal axis, vertical axis] for analog sticks
+        'l_stick_analog': [1, 2], # [horizontal axis, vertical axis] for analog sticks
         'r_stick_analog': [3, 4],
-        'zl':   [2, -0.5], # [axis, threshold] for analog axes to be converted to buttons
-        'zr':   [5, -0.5],
+        'zl':   [7, -0.5], # [axis, threshold] for analog axes to be converted to buttons
+        'zr':   [8, -0.5],
     }
 
     hat_id = 0
@@ -100,6 +101,7 @@ async def relais(controller_state):
     buttons, analogs, hat_id = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
 
+    
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
     skip = 0
