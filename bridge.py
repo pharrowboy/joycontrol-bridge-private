@@ -64,7 +64,7 @@ def init_relais():
             joystick = pygame.joystick.Joystick(0)
         except pygame.error:
             print("Retrying...")
-            time.sleep(200)
+            time.sleep(1)
             continue
         break
     joystick.init()
@@ -104,7 +104,7 @@ async def relais(controller_state):
             joystick = pygame.joystick.Joystick(0)
         except pygame.error:
             print("Retrying...")
-            time.sleep(200)
+            time.sleep(1)
             continue
         break
     joystick.init()
