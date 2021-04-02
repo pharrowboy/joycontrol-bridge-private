@@ -1,14 +1,13 @@
 import asyncio
-import aiofiles
+
 import time
 import struct
+import enum
+
+import joystick
 
 
 DEBUG = False
-
-# u32 time, s16 val, u8 type, u8 num
-EVENT_FORMAT = "LhBB"
-EVENT_SIZE = struct.calcsize(EVENT_FORMAT)
 
 
 def button_update(button, val):
@@ -20,7 +19,7 @@ def stick_update(button, val):
 
 
 async def main():
-    buttons = [
+    buttons = {
         'b':       0,
         'a':       1,
         'x':       2,
@@ -38,7 +37,7 @@ async def main():
         'down':    14,
         'left':    15,
         'right':   16,
-    ]
+    }
     analogs = {
         'l_stick_analog': [0, 1],
         'r_stick_analog': [2, 3]
@@ -46,15 +45,9 @@ async def main():
     buttons = dict((val, key) for key, val in buttons.items())
     list_buttons = list(buttons.keys())
     list_analogs = list(analogs.keys())
-    async with aiofiles.open("/dev/input/js0", "rb") as joystick:
-        while True:
-            event = await joystick.read(EVENT_SIZE)
-            if not event:
-                break
-            event_time, event_value, event_type, event_number = struct.unpack(
-                EVENT_FORMAT, event)
-            print("Time: {} | Value: {} | Type: {} | Number: {}",
-                  event_time, event_value, event_type, event_number)
+    async for event in joystick.joystick_poll(0):
+        print("Time: {} | Value: {} | Type: {} | Number: {}".format(
+              event.timestamp, event.value, event.kind, event.number))
 
 
 if __name__ == '__main__':
@@ -63,4 +56,4 @@ if __name__ == '__main__':
         loop.run_until_complete(main())
     except KeyboardInterrupt:
         print("Control-C detected. Bye")
-        pass
+        exit(0)
