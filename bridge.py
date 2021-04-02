@@ -129,8 +129,6 @@ async def relais(controller_state):
     last_axis_x = 2047
     last_axis_y = 2047
     async for event in joystick.joystick_poll(id):
-        if DEBUG:
-            print(event)
         if event.type == joystick.EVENT_BUTTON:
             await button_update(controller_state, buttons[event.number], event.value)
         elif event.type == joystick.EVENT_AXIS:
