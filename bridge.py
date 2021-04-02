@@ -9,6 +9,8 @@ import pygame
 import sys
 import time
 
+import joystick
+
 from aioconsole import ainput
 
 from joycontrol import logging_default as log, utils
@@ -71,9 +73,9 @@ def init_relais():
             count = pygame.joystick.get_count()
             print(count, "controllers detected.")
             for id in range(count):
-                joy = pygame.joystick.Joystick(id)
-                print(f"{id}: {describe_joystick(joy)}")
-                joy.quit()
+                device = pygame.joystick.Joystick(id)
+                print(f"{id}: {describe_joystick(device)}")
+                device.quit()
             if count > 0:
                 num = int(input("Controller >> ").rstrip())
                 if num < 0 or num >= count:
