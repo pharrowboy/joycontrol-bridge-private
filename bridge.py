@@ -55,9 +55,6 @@ Options:
 
 
 def init_relais():
-    # todo: - button layout parsing from config file
-    #       - basic GUI to show/generate config file + to start/stop the script
-
     pygame.init()
     while True:
         try:
@@ -66,11 +63,16 @@ def init_relais():
             break
         except pygame.error as e:
             pygame.joystick.quit()
-            print("init_relais: Retrying...")
-            print(e)
-            time.sleep(1)
+            time.sleep(0.5)
             continue
     joystick.init()
+    print("Initialized Joystick '{}' with {} buttons, {} hats, {} balls, and {} axes.",
+          joystick.get_name(),
+          joystick.get_numbuttons(),
+          joystick.get_numhats(),
+          joystick.get_numballs(),
+          joystick.get_numaxes(),
+          )
 
     buttons = {
         'b': 0,
@@ -92,62 +94,57 @@ def init_relais():
         # 'left': 15,
         # 'right': 16,
     }
-
     analogs = {
         # [horizontal axis, vertical axis] for analog sticks
         'l_stick_analog': [0, 1],
         'r_stick_analog': [2, 3],
     }
-
-    return buttons, analogs
+    return buttons, analogs, joystick
 
 
 async def relais(controller_state):
-    buttons, analogs = init_relais()
+    buttons, analogs, joystick = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
-
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    skip = 0
     button_id = -1
+
+    list_buttons = list(buttons.keys())
+    list_analogs = list(analogs.keys())
+
     while True:
-        skip += 1
         event = pygame.event.wait()
-        # print("[user_input] ", event)
         try:
             if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
-                for button_id in list(buttons.keys()):
+                for button_id in list_buttons:
                     val = joystick.get_button(button_id)
                     await button_update(controller_state, buttons[button_id], val)
             elif event.type == pygame.JOYHATMOTION:
-                hats = joystick.get_hat(hat_id)
-                if hats[0] == 0:  # left/right is unpressed
+                x, y = joystick.get_hat(0)
+                if x == 0:  # left/right is unpressed
                     await button_update(controller_state, 'left', 0)
                     await button_update(controller_state, 'right', 0)
-                elif hats[0] == 1:  # right is pressed
+                elif x == 1:  # right is pressed
                     await button_update(controller_state, 'right', 1)
-                elif hats[0] == -1:  # left is pressed
+                elif x == -1:  # left is pressed
                     await button_update(controller_state, 'left', 1)
-
-                if hats[1] == 0:  # up/down is unpressed
+                if y == 0:  # up/down is unpressed
                     await button_update(controller_state, 'up', 0)
                     await button_update(controller_state, 'down', 0)
-                elif hats[1] == 1:  # up is pressed
+                elif y == 1:  # up is pressed
                     await button_update(controller_state, 'up', 1)
-                elif hats[1] == -1:  # down is pressed
+                elif y == -1:  # down is pressed
                     await button_update(controller_state, 'down', 1)
             elif event.type == pygame.JOYAXISMOTION:
-                for key in analogs.keys():
-                    if key[-6:] == 'analog':  # analog sticks
-                        val_h = joystick.get_axis(analogs[key][0])
-                        val_v = joystick.get_axis(analogs[key][1])
-                        vals = {}
-                        # converts to the range of [0, 4096)
-                        vals['h'] = abs(int(((val_h + 1) / 2) * 4096) - 1)
-                        # converts to the range of [0, 4096) + inversion of the vertical axis
-                        vals['v'] = abs(int(((-1 * val_v + 1) / 2) * 4096) - 1)
-                        # inversion might be an issue for other controllers...
-                        await stick_update(controller_state, key, vals)
+                for key in list_analogs:
+                    val_h = joystick.get_axis(analogs[key][0])
+                    val_v = joystick.get_axis(analogs[key][1])
+                    vals = {}
+                    # inputs = [-1, +1]
+                    # converts to the range of [0, 4096)
+                    vals['h'] = max(int((val_h + 1) / 2 * 4096) - 1, 0)
+                    # converts to the range of [0, 4096) + inversion of the vertical axis
+                    vals['v'] = max(int((-1 * val_v + 1) / 2 * 4096) - 1, 0)
+                    # inversion might be an issue for other controllers...
+                    await stick_update(controller_state, key, vals)
         except pygame.error as e:
             print("Processing button ID ", button_id)
             raise e
