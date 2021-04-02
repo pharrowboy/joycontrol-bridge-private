@@ -40,10 +40,10 @@ async def main():
         16: 'right',
     }
     analogs = {
-        0: {name: 'l_stick_analog', direction: 'h'},
-        1: {name: 'l_stick_analog', direction: 'v'},
-        2: {name: 'r_stick_analog', direction: 'h'},
-        3: {name: 'r_stick_analog', direction: 'v'}
+        0: {"name": 'l_stick_analog', "direction": 'h'},
+        1: {"name": 'l_stick_analog', "direction": 'v'},
+        2: {"name": 'r_stick_analog', "direction": 'h'},
+        3: {"name": 'r_stick_analog', "direction": 'v'}
     }
 
     last_axis_x = 2047
