@@ -42,10 +42,10 @@ async def init_relais():
         15: 'left',
         16: 'right',
     }
-    if not exists("/dev/input/js0"):
+    if not os.path.exists("/dev/input/js0"):
         print("Please connect any controller! Waiting...")
 
-    while not exists("/dev/input/js0"):
+    while not os.path.exists("/dev/input/js0"):
         await asyncio.sleep(1)
 
     return buttons, 0
