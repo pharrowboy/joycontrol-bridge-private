@@ -2,7 +2,6 @@ import asyncio
 
 import time
 import struct
-import enum
 
 import joystick
 

@@ -5,6 +5,7 @@
 # joystick_poll()
 
 import aiofiles
+import enum
 
 
 class JoystickEvent:
