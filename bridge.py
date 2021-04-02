@@ -53,6 +53,14 @@ Options:
     -l --log <communication_log_file>       Write hid communication (input reports and output reports) to a file.
 """
 
+def describe_joystick(joystick):
+    return "'{}' ({} buttons, {} hats, {} balls, and {} axes)".format(
+        joystick.get_name(),
+        joystick.get_numbuttons(),
+        joystick.get_numhats(),
+        joystick.get_numballs(),
+        joystick.get_numaxes())
+
 
 def init_relais():
     pygame.init()
