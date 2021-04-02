@@ -71,7 +71,7 @@ class ControllerProtocol(BaseProtocol):
         self._controller_state_sender = None
 
     async def flush(self):
-        write(self, self.bulk_report)
+        self.write(self, self.bulk_report)
 
     async def write(self, input_report: InputReport):
         """
