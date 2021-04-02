@@ -133,14 +133,11 @@ async def relais(controller_state):
             await button_update(controller_state, buttons[event.number], event.value)
         elif event.type == joystick.EVENT_AXIS:
             what = analogs[event.number]
-            value = min(
-                max(int((normalize(event.value) + 1) / 2 * 4096), 0), 4096)
-            print(value)
+            value = normalize(event.value)
             if what["direction"] == "h":
-                last_axis_x = value
+                last_axis_x = min(max(int((value + 1) / 2 * 4096), 0), 4096)
             else:
-                last_axis_y = value
-
+                last_axis_y = min(max(int((-value + 1) / 2 * 4096), 0), 4096)
             await stick_update(controller_state, what["name"], {"h": last_axis_x, "v": last_axis_y})
 
 
