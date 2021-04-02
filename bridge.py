@@ -102,7 +102,7 @@ def init_relais():
 
 
 async def relais(controller_state):
-    buttons, analogs, hat_id = init_relais()
+    buttons, analogs = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
 
     joystick = pygame.joystick.Joystick(0)
