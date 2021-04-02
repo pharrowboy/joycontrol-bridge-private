@@ -98,8 +98,6 @@ if __name__ == '__main__':
     log.configure()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'controller', help='JOYCON_R, JOYCON_L or PRO_CONTROLLER')
     parser.add_argument('-l', '--log')
     parser.add_argument('-d', '--device_id')
     parser.add_argument('-r', '--reconnect_bt_addr', type=str, default=None,
