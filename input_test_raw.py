@@ -15,7 +15,7 @@ def stick_update(button, val):
 
 
 def normalize(value):
-    return min(max(value, 32767), -32767) / 32767
+    return max(min(value, 32767), -32767) / 32767
 
 
 async def main():
