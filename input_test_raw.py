@@ -56,13 +56,12 @@ async def main():
             button_update(buttons[event.number], event.value)
         elif event.type == joystick.EVENT_AXIS:
             what = analogs[event.number]
-            value = min(max(int((normalize(event.value) + 1) / 2 * 4096), 0), 4096)
+            value = normalize(event.value)
             print(value)
             if what["direction"] == "h":
-                last_axis_x = value
+                last_axis_x = min(max(int((value + 1) / 2 * 4095), 0), 4095)
             else:
-                last_axis_y = value
-
+                last_axis_y = min(max(int((-value + 1) / 2 * 4095), 0), 4095)
             stick_update(what["name"], {"h": last_axis_x, "v": last_axis_y})
 
 

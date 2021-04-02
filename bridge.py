@@ -135,9 +135,9 @@ async def relais(controller_state):
             what = analogs[event.number]
             value = normalize(event.value)
             if what["direction"] == "h":
-                last_axis_x = min(max(int((value + 1) / 2 * 4096), 0), 4096)
+                last_axis_x = min(max(int((value + 1) / 2 * 4095), 0), 4095)
             else:
-                last_axis_y = min(max(int((-value + 1) / 2 * 4096), 0), 4096)
+                last_axis_y = min(max(int((-value + 1) / 2 * 4095), 0), 4095)
             await stick_update(controller_state, what["name"], {"h": last_axis_x, "v": last_axis_y})
 
 
