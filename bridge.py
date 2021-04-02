@@ -66,13 +66,13 @@ def init_relais():
             time.sleep(0.5)
             continue
     joystick.init()
-    print("Initialized Joystick '{}' with {} buttons, {} hats, {} balls, and {} axes.",
+    print("Initialized Joystick '{}' with {} buttons, {} hats, {} balls, and {} axes.".format(
           joystick.get_name(),
           joystick.get_numbuttons(),
           joystick.get_numhats(),
           joystick.get_numballs(),
           joystick.get_numaxes(),
-          )
+          ))
 
     buttons = {
         'b': 0,
@@ -135,14 +135,16 @@ async def relais(controller_state):
                     await button_update(controller_state, 'down', 1)
             elif event.type == pygame.JOYAXISMOTION:
                 for key in list_analogs:
-                    val_h = joystick.get_axis(analogs[key][0])
-                    val_v = joystick.get_axis(analogs[key][1])
+                    val_h = (joystick.get_axis(analogs[key][0]) + 1) / 2
+                    val_v = (-joystick.get_axis(analogs[key][1]) + 1) / 2
+                    if val_h < 0.05 or val_v < 0.05:
+                        continue
                     vals = {}
                     # inputs = [-1, +1]
                     # converts to the range of [0, 4096)
-                    vals['h'] = max(int((val_h + 1) / 2 * 4096) - 1, 0)
+                    vals['h'] = max(int(val_h * 4096) - 1, 0)
                     # converts to the range of [0, 4096) + inversion of the vertical axis
-                    vals['v'] = max(int((-1 * val_v + 1) / 2 * 4096) - 1, 0)
+                    vals['v'] = max(int(val_v * 4096) - 1, 0)
                     # inversion might be an issue for other controllers...
                     await stick_update(controller_state, key, vals)
         except pygame.error as e:
