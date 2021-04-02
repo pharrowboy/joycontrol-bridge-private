@@ -21,7 +21,7 @@ class JoystickEvent:
             self.timestamp, self.value, self.type, self.number)
 
     def __iter__(self):
-        return (timestamp, value, type, number)
+        return (self.timestamp, self.value, self.type, self.number)
 
 
 EVENT_BUTTON = 0x01
