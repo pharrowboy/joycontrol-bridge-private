@@ -72,25 +72,25 @@ def init_relais():
     joystick.init()
 
     buttons = {
-        'a': 2,
-        'b': 1,
-        'x': 3,
-        'y': 4,
-        'minus':    9,
-        'plus':     10,
-        'home':     11,
+        'a': 1,
+        'b': 0,
+        'x': 2,
+        'y': 3,
+        'minus':    8,
+        'plus':     9,
+        'home':     10,
         #'capture':  ,
-        'l':    5,
-        'r':    6,
-        'l_stick': 12,
-        'r_stick': 13
+        'l':    4,
+        'r':    5,
+        'l_stick': 11,
+        'r_stick': 12
     }   
 
     analogs = {
-        'l_stick_analog': [1, 2], # [horizontal axis, vertical axis] for analog sticks
-        'r_stick_analog': [3, 4],
-        'zl':   [7, -0.5], # [axis, threshold] for analog axes to be converted to buttons
-        'zr':   [8, -0.5],
+        'l_stick_analog': [0, 1], # [horizontal axis, vertical axis] for analog sticks
+        'r_stick_analog': [2, 3],
+        'zl':   [6, -0.5], # [axis, threshold] for analog axes to be converted to buttons
+        'zr':   [7, -0.5],
     }
 
     hat_id = 0
