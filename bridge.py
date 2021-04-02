@@ -54,7 +54,7 @@ async def init_relais():
 async def relais(protocol, controller_state):
     def normalize(value):
         return max(min(value, 32767), -32767) / 32767
-    buttons, id = init_relais()
+    buttons, id = await init_relais()
     sticks = (controller_state.l_stick_state, controller_state.r_stick_state)
     async for event in joystick.joystick_poll(id):
         _timestamp, value, type, number = event
