@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import logging
+import threading
 import os
 
 import pygame
@@ -122,7 +123,7 @@ def init_relais():
     return buttons, analogs, id
 
 
-async def relais(controller_state):
+async def relais(protocol, controller_state):
     def normalize(value):
         return max(min(value, 32767), -32767) / 32767
     buttons, analogs, id = init_relais()
@@ -130,7 +131,7 @@ async def relais(controller_state):
     last_axis_y = 2047
     async for event in joystick.joystick_poll(id):
         if event.type == joystick.EVENT_BUTTON:
-            await button_update(controller_state, buttons[event.number], event.value)
+            button_update(controller_state, buttons[event.number], event.value)
         elif event.type == joystick.EVENT_AXIS:
             what = analogs[event.number]
             value = normalize(event.value)
@@ -138,7 +139,7 @@ async def relais(controller_state):
                 last_axis_x = min(max(int((value + 1) / 2 * 4095), 0), 4095)
             else:
                 last_axis_y = min(max(int((-value + 1) / 2 * 4095), 0), 4095)
-            await stick_update(controller_state, what["name"], {"h": last_axis_x, "v": last_axis_y})
+            stick_update(controller_state, what["name"], {"h": last_axis_x, "v": last_axis_y})
 
 
 async def test_controller_buttons(controller_state: ControllerState):
@@ -279,7 +280,7 @@ async def _main(args):
 
         controller_state = protocol.get_controller_state()
 
-        await relais(controller_state)
+        await relais(protocol, controller_state)
         # Create command line interface and add some extra commands
         cli = ControllerCLI(controller_state)
 
@@ -308,7 +309,7 @@ async def _main(args):
             """
             relais - run the relais
             """
-            await relais(controller_state)
+            await relais(protocol, controller_state)
 
         # add the script from above
         cli.add_command('relais', _run_relais)
@@ -354,6 +355,12 @@ async def _main(args):
         # add the script from above
         cli.add_command('amiibo', amiibo)
 
+        loop = asyncio.get_running_loop()
+        def sync_state():
+            loop.run_until_complete(protocol.send_controller_state())
+
+        timer = threading.Timer(0.002, sync_state)
+        timer.start()
         try:
             await cli.run()
         finally:
