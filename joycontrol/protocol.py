@@ -204,6 +204,7 @@ class ControllerProtocol(BaseProtocol):
                     # logger.warning(f'Code is running {abs(sleep_time)} s too slow!')
                     sleep_time = 0
 
+                logger.info("tick")
                 await asyncio.sleep(sleep_time)
 
         except NotConnectedError as err:
