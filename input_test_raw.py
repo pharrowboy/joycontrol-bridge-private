@@ -1,8 +1,5 @@
 import asyncio
-
 import time
-import struct
-
 import joystick
 
 
@@ -17,36 +14,56 @@ def stick_update(button, val):
     print("Stick:  ", button, val)
 
 
+def normalize(value):
+    return min(max(value, 32767), -32767) / 32767
+
+
 async def main():
+    # Pro Controller Keymap
     buttons = {
-        'b':       0,
-        'a':       1,
-        'x':       2,
-        'y':       3,
-        'l':       4,
-        'r':       5,
-        'zl':      6,
-        'zr':      7,
-        'minus':   8,
-        'plus':    9,
-        'home':    10,
-        'l_stick': 11,
-        'r_stick': 12,
-        'up':      13,
-        'down':    14,
-        'left':    15,
-        'right':   16,
+        0: 'b',
+        1: 'a',
+        2: 'x',
+        3: 'y',
+        4: 'l',
+        5: 'r',
+        6: 'zl',
+        7: 'zr',
+        8: 'minus',
+        9: 'plus',
+        10: 'home',
+        11: 'l_stick',
+        12: 'r_stick',
+        13: 'up',
+        14: 'down',
+        15: 'left',
+        16: 'right',
     }
     analogs = {
-        'l_stick_analog': [0, 1],
-        'r_stick_analog': [2, 3]
+        0: {name: 'l_stick_analog', direction: 'h'},
+        1: {name: 'l_stick_analog', direction: 'v'},
+        2: {name: 'r_stick_analog', direction: 'h'},
+        3: {name: 'r_stick_analog', direction: 'v'}
     }
-    buttons = dict((val, key) for key, val in buttons.items())
-    list_buttons = list(buttons.keys())
-    list_analogs = list(analogs.keys())
+
+    last_axis_x = 2047
+    last_axis_y = 2047
+
     async for event in joystick.joystick_poll(0):
-        print("Time: {} | Value: {} | Type: {} | Number: {}".format(
-              event.timestamp, event.value, event.kind, event.number))
+        if DEBUG:
+            print(event)
+        if event.type == joystick.EVENT_BUTTON:
+            button_update(buttons[event.number], event.value)
+        elif event.type == joystick.EVENT_AXIS:
+            what = analogs[event.number]
+            value = max(int(normalize(event.value) + 1 / 2 * 4096) - 1, 0)
+            print(value)
+            if direction == "h":
+                last_axis_x = value
+            else:
+                last_axis_y = value
+
+            stick_update(what["name"], {"h": last_axis_x, "v": last_axis_y})
 
 
 if __name__ == '__main__':
