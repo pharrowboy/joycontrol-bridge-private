@@ -48,6 +48,7 @@ async def init_relais():
     while not os.path.exists("/dev/input/js0"):
         await asyncio.sleep(1)
 
+    logger.warn("Controller connected.")
     return buttons, 0
 
 
