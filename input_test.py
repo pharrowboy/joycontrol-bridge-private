@@ -73,9 +73,7 @@ async def main():
     analogs = {
         # [horizontal axis, vertical axis] for analog sticks
         'l_stick_analog': [0, 1],
-        'r_stick_analog': [2, 3],
-        'l_stick_hat': [4, 5],
-        'r_stick_hat': [6, 7],
+        'r_stick_analog': [2, 3]
     }
     buttons = dict((val, key) for key, val in buttons.items())
     button_id = -1
