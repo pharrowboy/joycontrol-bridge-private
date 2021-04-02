@@ -355,11 +355,11 @@ async def _main(args):
         # add the script from above
         cli.add_command('amiibo', amiibo)
 
-        loop = asyncio.get_running_loop()
+        loop = asyncio.new_event_loop()
         def sync_state():
             loop.run_until_complete(protocol.send_controller_state())
 
-        timer = threading.Timer(0.002, sync_state)
+        timer = threading.Timer(0.001, sync_state)
         timer.start()
         try:
             await cli.run()
@@ -386,8 +386,4 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--reconnect_bt_addr', type=str, default=None,
                         help='The Switch console Bluetooth address, for reconnecting as an already paired controller')
     args = parser.parse_args()
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(
-        _main(args)
-    )
+    asyncio.run(_main(args))
