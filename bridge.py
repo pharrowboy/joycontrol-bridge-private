@@ -48,7 +48,7 @@ async def init_relais():
     while not os.path.exists("/dev/input/js0"):
         await asyncio.sleep(1)
 
-    logger.warn("Controller connected.")
+    logger.info("Controller connected.")
     return buttons, 0
 
 
@@ -61,6 +61,7 @@ async def relais(protocol, controller_state):
         _timestamp, value, type, number = event
         if type == joystick.EVENT_BUTTON:
             controller_state.button_state.set_button(buttons[number], value)
+            controller_state.send()
         elif type == joystick.EVENT_AXIS:
             is_vertical = (number & 1)
             stick_state = sticks[number // 2]
