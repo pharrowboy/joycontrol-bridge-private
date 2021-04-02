@@ -110,7 +110,7 @@ async def relais(controller_state):
     skip = 0
     while True:
         skip += 1
-        event = pygame.event.wait():  # User did something.
+        event = pygame.event.wait()
         print("[user_input] ", event)
         if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
             for button_id in list(buttons.keys()):
