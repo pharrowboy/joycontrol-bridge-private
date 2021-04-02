@@ -62,8 +62,9 @@ def init_relais():
             pygame.init()
             pygame.joystick.init()
             joystick = pygame.joystick.Joystick(0)
-        except pygame.error:
+        except pygame.error as e:
             print("init_relais: Retrying...")
+            print(e)
             time.sleep(1)
             continue
         break
