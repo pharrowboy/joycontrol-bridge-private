@@ -53,6 +53,7 @@ Options:
     -l --log <communication_log_file>       Write hid communication (input reports and output reports) to a file.
 """
 
+
 def init_relais():
     # todo: - button layout parsing from config file
     #       - basic GUI to show/generate config file + to start/stop the script
@@ -72,90 +73,62 @@ def init_relais():
     joystick.init()
 
     buttons = {
-        'a': 1,
         'b': 0,
+        'a': 1,
         'x': 2,
         'y': 3,
+        'l':    4,
+        'r':    5,
+        'zl':   6,
+        'zr':   7,
         'minus':    8,
         'plus':     9,
         'home':     10,
-        #'capture':  ,
-        'l':    4,
-        'r':    5,
         'l_stick': 11,
-        'r_stick': 12
-    }   
-
-    analogs = {
-        'l_stick_analog': [0, 1], # [horizontal axis, vertical axis] for analog sticks
-        'r_stick_analog': [2, 3],
-        'zl':   [6, -0.5], # [axis, threshold] for analog axes to be converted to buttons
-        'zr':   [7, -0.5],
+        'r_stick': 12,
+        'up': 13,
+        'down': 14,
+        'left': 15,
+        'right': 16,
     }
 
-    hat_id = 0
+    analogs = {
+        # [horizontal axis, vertical axis] for analog sticks
+        'l_stick_analog': [0, 1],
+        'r_stick_analog': [2, 3],
+    }
 
-    return buttons, analogs, hat_id
+    return buttons, analogs
+
 
 async def relais(controller_state):
     buttons, analogs, hat_id = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
 
-    
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
     skip = 0
     while True:
         skip += 1
-        for event in pygame.event.get(): # User did something.
-            if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
-                for button_id in list(buttons.keys()):        
-                    val = joystick.get_button(button_id)
-                    await button_update(controller_state, buttons[button_id], val)            
-            
-            # this is working but can get unresponsive if axes are moved to frequently (too many events in the queue to be processed fast)
-            # I'll leave this commented out for better responsiveness in games like mario kart. 
-            # If you want to use your xbox/playstation controller as a pro controller, consider using something like the 8bitdo adapters, you'll have more fun this way.
+        event = pygame.event.wait():  # User did something.
+        print("[user_input] ", event)
+        if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
+            for button_id in list(buttons.keys()):
+                val = joystick.get_button(button_id)
+                await button_update(controller_state, buttons[button_id], val)
+        elif event.type == pygame.JOYAXISMOTION and skip % 5 == 0:
+            for key in analogs.keys():
+                if key[-6:] == 'analog':  # analog sticks
+                    val_h = joystick.get_axis(analogs[key][0])
+                    val_v = joystick.get_axis(analogs[key][1])
+                    vals = {}
+                    # converts to the range of [0, 4096)
+                    vals['h'] = abs(int(((val_h + 1) / 2) * 4096) - 1)
+                    # converts to the range of [0, 4096) + inversion of the vertical axis
+                    vals['v'] = abs(int(((-1 * val_v + 1) / 2) * 4096) - 1)
+                    # inversion might be an issue for other controllers...
+                    await stick_update(controller_state, key, vals)
 
-            #elif event.type == pygame.JOYAXISMOTION and skip%5 == 0:
-            #    for key in analogs.keys():
-            #        if key[-6:] == 'analog': # analog sticks 
-            #            val_h = joystick.get_axis(analogs[key][0])                         
-            #            val_v = joystick.get_axis(analogs[key][1])
-
-            #            vals = {}
-            #            vals['h'] = abs(int(((val_h + 1) / 2) * 4096) - 1) # converts to the range of [0, 4096) 
-            #            vals['v'] = abs(int(((-1 * val_v + 1) / 2) * 4096) - 1) # converts to the range of [0, 4096) + inversion of the vertical axis
-                                                                                # inversion might be an issue for other controllers...
-
-             #           await stick_update(controller_state, key, vals)
-
-             #       else: # analog triggers -> button conversion
-             #           threshold = analogs[key][1]
-             #           if joystick.get_axis(analogs[key][0]) > threshold:
-             #               await button_update(controller_state, key, 1)
-             #           else:
-             #               await button_update(controller_state, key, 0)            
-
-            elif event.type == pygame.JOYHATMOTION:
-                hats = joystick.get_hat(hat_id)
-                if hats[0] == 0: # left/right is unpressed 
-                    await button_update(controller_state, 'left', 0)
-                    await button_update(controller_state, 'right', 0)
-                elif hats[0] == 1: # right is pressed
-                    await button_update(controller_state, 'right', 1)
-                elif hats[0] == -1: # left is pressed
-                    await button_update(controller_state, 'left', 1)
-
-                if hats[1] == 0: # up/down is unpressed
-                    await button_update(controller_state, 'up', 0)
-                    await button_update(controller_state, 'down', 0)
-                elif hats[1] == 1: # up is pressed
-                    await button_update(controller_state, 'up', 1)
-                elif hats[1] == -1: # down is pressed
-                    await button_update(controller_state, 'down', 1)
-
-        time.sleep(0.001)
 
 async def test_controller_buttons(controller_state: ControllerState):
     """
@@ -257,10 +230,12 @@ async def mash_button(controller_state, button, interval):
     await controller_state.connect()
 
     if button not in controller_state.button_state.get_available_buttons():
-        raise ValueError(f'Button {button} does not exist on {controller_state.get_controller()}')
+        raise ValueError(
+            f'Button {button} does not exist on {controller_state.get_controller()}')
 
     user_input = asyncio.ensure_future(
-        ainput(prompt=f'Pressing the {button} button every {interval} seconds... Press <enter> to stop.')
+        ainput(
+            prompt=f'Pressing the {button} button every {interval} seconds... Press <enter> to stop.')
     )
     # push a button repeatedly until user input
     while not user_input.done():
@@ -336,7 +311,8 @@ async def _main(args):
                 mash <button> <interval>
             """
             if not len(args) == 2:
-                raise ValueError('"mash_button" command requires a button and interval as arguments!')
+                raise ValueError(
+                    '"mash_button" command requires a button and interval as arguments!')
 
             button, interval = args
             await mash_button(controller_state, button, interval)
@@ -356,7 +332,8 @@ async def _main(args):
             if controller_state.get_controller() == Controller.JOYCON_L:
                 raise ValueError('NFC content cannot be set for JOYCON_L')
             elif not args:
-                raise ValueError('"amiibo" command requires file path to an nfc dump as argument!')
+                raise ValueError(
+                    '"amiibo" command requires file path to an nfc dump as argument!')
             elif args[0] == 'remove':
                 controller_state.set_nfc(None)
                 print('Removed nfc content.')
@@ -379,11 +356,12 @@ if __name__ == '__main__':
         raise PermissionError('Script must be run as root!')
 
     # setup logging
-    #log.configure(console_level=logging.ERROR)
+    # log.configure(console_level=logging.ERROR)
     log.configure()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('controller', help='JOYCON_R, JOYCON_L or PRO_CONTROLLER')
+    parser.add_argument(
+        'controller', help='JOYCON_R, JOYCON_L or PRO_CONTROLLER')
     parser.add_argument('-l', '--log')
     parser.add_argument('-d', '--device_id')
     parser.add_argument('--spi_flash')
