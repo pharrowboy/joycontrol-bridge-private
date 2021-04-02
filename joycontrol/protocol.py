@@ -172,6 +172,7 @@ class ControllerProtocol(BaseProtocol):
                         logger.warning(err)
 
                 if reply_send:
+                    send_delay = 0.015
                     # Hack: Adding a delay here to avoid flooding during pairing
                     await asyncio.sleep(0.3)
                 else:
