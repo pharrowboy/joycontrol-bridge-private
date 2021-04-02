@@ -82,6 +82,8 @@ async def _main(args):
                                                       itr_psm=itr_psm, capture_file=capture_file,
                                                       device_id=args.device_id)
         controller_state = protocol.get_controller_state()
+        await controller_state.connect()
+        protocol.frequency.value = 0.001
         try:
             await relais(protocol, controller_state)
         finally:

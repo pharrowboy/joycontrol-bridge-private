@@ -4,6 +4,7 @@ import time
 from asyncio import BaseTransport, BaseProtocol
 from contextlib import suppress
 from typing import Optional, Union, Tuple, Text
+from multiprocessing import Value
 
 from joycontrol import utils
 from joycontrol.controller import Controller
@@ -37,7 +38,8 @@ class ControllerProtocol(BaseProtocol):
 
         self._data_received = asyncio.Event()
 
-        self._controller_state = ControllerState(self, controller, spi_flash=spi_flash)
+        self._controller_state = ControllerState(
+            self, controller, spi_flash=spi_flash)
         self._controller_state_sender = None
 
         # None = Just answer to sub commands
@@ -45,6 +47,9 @@ class ControllerProtocol(BaseProtocol):
 
         # This event gets triggered once the Switch assigns a player number to the controller and accepts user inputs
         self.sig_set_player_lights = asyncio.Event()
+
+        self.frequency = Value("i")
+        self.frequency.value = 0.015
 
     async def send_controller_state(self):
         """
@@ -60,7 +65,8 @@ class ControllerProtocol(BaseProtocol):
         self._controller_state.sig_is_send.clear()
 
         # wrap into a future to be able to set an exception in case of a disconnect
-        self._controller_state_sender = asyncio.ensure_future(self._controller_state.sig_is_send.wait())
+        self._controller_state_sender = asyncio.ensure_future(
+            self._controller_state.sig_is_send.wait())
         await self._controller_state_sender
         self._controller_state_sender = None
 
@@ -128,11 +134,11 @@ class ControllerProtocol(BaseProtocol):
             0x31 input reports containing the controller state and nfc data
         """
         if self.transport.is_reading():
-            raise ValueError('Transport must be paused in full input report mode')
+            raise ValueError(
+                'Transport must be paused in full input report mode')
 
         # send state at 66Hz
-        send_delay = 0.015
-        await asyncio.sleep(send_delay)
+        await asyncio.sleep(self.frequency.value)
         last_send_time = time.time()
 
         input_report = InputReport()
@@ -163,21 +169,21 @@ class ControllerProtocol(BaseProtocol):
                             reply_send = await self._reply_to_sub_command(report)
                         elif output_report_id == OutputReportID.REQUEST_IR_NFC_MCU:
                             # TODO NFC
-                            raise NotImplementedError('NFC communictation is not implemented.')                            
+                            raise NotImplementedError(
+                                'NFC communictation is not implemented.')
                         else:
-                            logger.warning(f'Report unknown output report "{output_report_id}" - IGNORE')
+                            logger.warning(
+                                f'Report unknown output report "{output_report_id}" - IGNORE')
                     except ValueError as v_err:
-                        logger.warning(f'Report parsing error "{v_err}" - IGNORE')
+                        logger.warning(
+                            f'Report parsing error "{v_err}" - IGNORE')
                     except NotImplementedError as err:
                         logger.warning(err)
 
                 if reply_send:
-                    send_delay = 0.015
                     # Hack: Adding a delay here to avoid flooding during pairing
                     await asyncio.sleep(0.3)
                 else:
-                    send_delay = 0.001
-
                     # write 0x30 input report.
                     # TODO: set some sensor data
                     input_report.set_6axis_data()
@@ -191,7 +197,7 @@ class ControllerProtocol(BaseProtocol):
                 # calculate delay
                 current_time = time.time()
                 time_delta = time.time() - last_send_time
-                sleep_time = send_delay - time_delta
+                sleep_time = self.frequency.value - time_delta
                 last_send_time = current_time
 
                 if sleep_time < 0:
@@ -231,7 +237,8 @@ class ControllerProtocol(BaseProtocol):
         # elif output_report_id == OutputReportID.RUMBLE_ONLY:
         #    pass
         else:
-            logger.warning(f'Output report {output_report_id} not implemented - ignoring')
+            logger.warning(
+                f'Output report {output_report_id} not implemented - ignoring')
 
     async def _reply_to_sub_command(self, report):
         # classify sub command
@@ -242,7 +249,8 @@ class ControllerProtocol(BaseProtocol):
             return False
 
         if sub_command is None:
-            raise ValueError('Received output report does not contain a sub command')
+            raise ValueError(
+                'Received output report does not contain a sub command')
 
         logging.info(f'received output report - Sub command {sub_command}')
 
@@ -281,7 +289,8 @@ class ControllerProtocol(BaseProtocol):
             elif sub_command == SubCommand.SET_PLAYER_LIGHTS:
                 await self._command_set_player_lights(sub_command_data)
             else:
-                logger.warning(f'Sub command 0x{sub_command.value:02x} not implemented - ignoring')
+                logger.warning(
+                    f'Sub command 0x{sub_command.value:02x} not implemented - ignoring')
                 return False
         except NotImplementedError as err:
             logger.error(f'Failed to answer {sub_command} - {err}')
@@ -298,7 +307,8 @@ class ControllerProtocol(BaseProtocol):
         bd_address = list(map(lambda x: int(x, 16), address[0].split(':')))
 
         input_report.set_ack(0x82)
-        input_report.sub_0x02_device_info(bd_address, controller=self.controller)
+        input_report.sub_0x02_device_info(
+            bd_address, controller=self.controller)
 
         await self.write(input_report)
 
@@ -343,13 +353,15 @@ class ControllerProtocol(BaseProtocol):
 
     async def _command_set_input_report_mode(self, sub_command_data):
         if self._input_report_mode == sub_command_data[0]:
-            logger.warning(f'Already in input report mode {sub_command_data[0]} - ignoring request')
+            logger.warning(
+                f'Already in input report mode {sub_command_data[0]} - ignoring request')
 
         # Start input report reader
         if sub_command_data[0] in (0x30, 0x31):
             new_reader = asyncio.ensure_future(self.input_report_mode_full())
         else:
-            logger.error(f'input report mode {sub_command_data[0]} not implemented - ignoring request')
+            logger.error(
+                f'input report mode {sub_command_data[0]} not implemented - ignoring request')
             return
 
         # Replace the currently running reader with the input report mode sender,
@@ -361,7 +373,8 @@ class ControllerProtocol(BaseProtocol):
         async def set_reader():
             await self.transport.set_reader(new_reader)
 
-            logger.info(f'Setting input report mode to {hex(sub_command_data[0])}...')
+            logger.info(
+                f'Setting input report mode to {hex(sub_command_data[0])}...')
             self._input_report_mode = sub_command_data[0]
 
             self.transport.resume_reading()
@@ -386,13 +399,16 @@ class ControllerProtocol(BaseProtocol):
         input_report.set_misc()
 
         input_report.set_ack(0x83)
-        input_report.reply_to_subcommand_id(SubCommand.TRIGGER_BUTTONS_ELAPSED_TIME)
+        input_report.reply_to_subcommand_id(
+            SubCommand.TRIGGER_BUTTONS_ELAPSED_TIME)
         # Hack: We assume this command is only used during pairing - Set values so the Switch assigns a player number
         if self.controller == Controller.PRO_CONTROLLER:
-            input_report.sub_0x04_trigger_buttons_elapsed_time(L_ms=3000, R_ms=3000)
+            input_report.sub_0x04_trigger_buttons_elapsed_time(
+                L_ms=3000, R_ms=3000)
         elif self.controller in (Controller.JOYCON_L, Controller.JOYCON_R):
             # TODO: What do we do if we want to pair a combined JoyCon?
-            input_report.sub_0x04_trigger_buttons_elapsed_time(SL_ms=3000, SR_ms=3000)
+            input_report.sub_0x04_trigger_buttons_elapsed_time(
+                SL_ms=3000, SR_ms=3000)
         else:
             raise NotImplementedError(self.controller)
 
@@ -425,9 +441,11 @@ class ControllerProtocol(BaseProtocol):
         input_report.set_misc()
 
         input_report.set_ack(0xA0)
-        input_report.reply_to_subcommand_id(SubCommand.SET_NFC_IR_MCU_CONFIG.value)
+        input_report.reply_to_subcommand_id(
+            SubCommand.SET_NFC_IR_MCU_CONFIG.value)
 
-        data = [1, 0, 255, 0, 8, 0, 27, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200]
+        data = [1, 0, 255, 0, 8, 0, 27, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200]
         for i in range(len(data)):
             input_report.data[16 + i] = data[i]
 
@@ -442,11 +460,13 @@ class ControllerProtocol(BaseProtocol):
         if sub_command_data[0] == 0x01:
             # 0x01 = Resume
             input_report.set_ack(0x80)
-            input_report.reply_to_subcommand_id(SubCommand.SET_NFC_IR_MCU_STATE.value)
+            input_report.reply_to_subcommand_id(
+                SubCommand.SET_NFC_IR_MCU_STATE.value)
         elif sub_command_data[0] == 0x00:
             # 0x00 = Suspend
             input_report.set_ack(0x80)
-            input_report.reply_to_subcommand_id(SubCommand.SET_NFC_IR_MCU_STATE.value)
+            input_report.reply_to_subcommand_id(
+                SubCommand.SET_NFC_IR_MCU_STATE.value)
         else:
             raise NotImplementedError(f'Argument {sub_command_data[0]} of {SubCommand.SET_NFC_IR_MCU_STATE} '
                                       f'not implemented.')
