@@ -175,6 +175,8 @@ class ControllerProtocol(BaseProtocol):
                     # Hack: Adding a delay here to avoid flooding during pairing
                     await asyncio.sleep(0.3)
                 else:
+                    send_delay = 0.001
+
                     # write 0x30 input report.
                     # TODO: set some sensor data
                     input_report.set_6axis_data()
