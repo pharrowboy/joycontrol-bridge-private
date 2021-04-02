@@ -57,11 +57,12 @@ async def relais(protocol, controller_state):
         return max(min(value, 32767), -32767) / 32767
     buttons, id = await init_relais()
     sticks = (controller_state.l_stick_state, controller_state.r_stick_state)
+    logger.info("Polling joystick...")
     async for event in joystick.joystick_poll(id):
         _timestamp, value, type, number = event
         if type == joystick.EVENT_BUTTON:
             controller_state.button_state.set_button(buttons[number], value)
-            controller_state.send()
+            await controller_state.send()
         elif type == joystick.EVENT_AXIS:
             is_vertical = (number & 1)
             stick_state = sticks[number // 2]
