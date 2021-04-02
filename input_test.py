@@ -3,8 +3,12 @@ import asyncio
 import time
 
 
+DEBUG = False
+
+
 def button_update(button, val):
     print("Button: ", button, val)
+
 
 def stick_update(button, val):
     print("Stick:  ", button, val)
@@ -70,6 +74,8 @@ async def main():
         # [horizontal axis, vertical axis] for analog sticks
         'l_stick_analog': [0, 1],
         'r_stick_analog': [2, 3],
+        'l_stick_hat': [4, 5],
+        'r_stick_hat': [6, 7],
     }
     buttons = dict((val, key) for key, val in buttons.items())
     button_id = -1
@@ -77,7 +83,8 @@ async def main():
     list_analogs = list(analogs.keys())
     while True:
         event = pygame.event.wait()
-        print("[user_event]", event)
+        if DEBUG:
+            print("[user_event]", event)
         try:
             if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
                 for button_id in list_buttons:
@@ -103,7 +110,7 @@ async def main():
                 for key in list_analogs:
                     val_h = (joystick.get_axis(analogs[key][0]) + 1) / 2
                     val_v = (-joystick.get_axis(analogs[key][1]) + 1) / 2
-                    if val_h < 0.05 or val_v < 0.05:
+                    if val_h < 0.1 or val_v < 0.1:
                         continue
                     vals = {}
                     # inputs = [-1, +1]
