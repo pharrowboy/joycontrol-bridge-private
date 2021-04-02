@@ -38,7 +38,8 @@ class ControllerState:
                 calibration_data = spi_flash.get_user_r_stick_calibration()
                 if calibration_data is None:
                     calibration_data = spi_flash.get_factory_r_stick_calibration()
-                calibration = RightStickCalibration.from_bytes(calibration_data)
+                calibration = RightStickCalibration.from_bytes(
+                    calibration_data)
 
             self.r_stick_state = StickState(calibration=calibration)
             if calibration is not None:
@@ -90,6 +91,7 @@ class ButtonState:
     def home_is_set(self):
         return get_bit(self.byte_2, 4)
     """
+
     def __init__(self, controller: Controller):
         self.controller = controller
 
@@ -143,7 +145,8 @@ class ButtonState:
         if self.controller == Controller.JOYCON_R or self.controller == Controller.PRO_CONTROLLER:
             self.home, self.home_is_set = button_method_factory('_byte_2', 4)
         if self.controller == Controller.JOYCON_L or self.controller == Controller.PRO_CONTROLLER:
-            self.capture, self.capture_is_set = button_method_factory('_byte_2', 5)
+            self.capture, self.capture_is_set = button_method_factory(
+                '_byte_2', 5)
 
         # byte 3
         if self.controller == Controller.PRO_CONTROLLER or self.controller == Controller.JOYCON_L:
@@ -161,12 +164,14 @@ class ButtonState:
 
     def set_button(self, button, pushed=True):
         if button not in self._available_buttons:
-            raise ValueError(f'Given button "{button}" is not available to {self.controller.device_name()}.')
+            raise ValueError(
+                f'Given button "{button}" is not available to {self.controller.device_name()}.')
         getattr(self, button)(pushed=pushed)
 
     def get_button(self, button):
         if button not in self._available_buttons:
-            raise ValueError(f'Given button "{button}" is not available to {self.controller.device_name()}.')
+            raise ValueError(
+                f'Given button "{button}" is not available to {self.controller.device_name()}.')
         return getattr(self, f'{button}_is_set')()
 
     def get_available_buttons(self):
@@ -185,71 +190,6 @@ class ButtonState:
 
     def clear(self):
         self._byte_1 = self._byte_2 = self._byte_3 = 0
-
-
-async def button_press(controller_state, *buttons):
-    """
-    Set given buttons in the controller state to the pressed down state and wait till send.
-    :param controller_state:
-    :param buttons: Buttons to press down (see ButtonState.get_available_buttons)
-    """
-    if not buttons:
-        raise ValueError('No Buttons were given.')
-
-    button_state = controller_state.button_state
-
-    for button in buttons:
-        # push button
-        button_state.set_button(button, pushed=True)
-
-    # wait until report is send
-    await controller_state.send()
-
-
-async def button_release(controller_state, *buttons):
-    """
-    Set given buttons in the controller state to the unpressed state and wait till send.
-    :param controller_state:
-    :param buttons: Buttons to set to unpressed (see ButtonState.get_available_buttons)
-    """
-    if not buttons:
-        raise ValueError('No Buttons were given.')
-
-    button_state = controller_state.button_state
-
-    for button in buttons:
-        # release button
-        button_state.set_button(button, pushed=False)
-
-    # wait until report is send
-    await controller_state.send()
-
-def button_update(controller_state, button, value):
-    button_state = controller_state.button_state
-    
-    # update button state
-    button_state.set_button(button, pushed=value)
-
-def stick_update(controller_state, stick, values):
-    if stick == 'l_stick_analog':
-        stick_state = controller_state.l_stick_state
-    elif stick == 'r_stick_analog':
-        stick_state = controller_state.r_stick_state
-
-    # update stick state
-    stick_state.set_h(values['h'])
-    stick_state.set_v(values['v'])    
-
-async def button_push(controller_state, *buttons, sec=0.1):
-    """
-    Shortly push the given buttons. Wait until the controller state is send.
-    :param controller_state:
-    :param buttons: Buttons to push (see ButtonState.get_available_buttons)
-    :param sec: Seconds to wait before releasing the button, default: 0.1
-    """
-    await button_press(controller_state, *buttons)
-    await asyncio.sleep(sec)
-    await button_release(controller_state, *buttons)
 
 
 class _StickCalibration:
@@ -273,8 +213,8 @@ class LeftStickCalibration(_StickCalibration):
     def from_bytes(_9bytes):
         h_max_above_center = (_9bytes[1] << 8) & 0xF00 | _9bytes[0]
         v_max_above_center = (_9bytes[2] << 4) | (_9bytes[1] >> 4)
-        h_center =           (_9bytes[4] << 8) & 0xF00 | _9bytes[3]
-        v_center =           (_9bytes[5] << 4) | (_9bytes[4] >> 4)
+        h_center = (_9bytes[4] << 8) & 0xF00 | _9bytes[3]
+        v_center = (_9bytes[5] << 4) | (_9bytes[4] >> 4)
         h_max_below_center = (_9bytes[7] << 8) & 0xF00 | _9bytes[6]
         v_max_below_center = (_9bytes[8] << 4) | (_9bytes[7] >> 4)
 
@@ -285,8 +225,8 @@ class LeftStickCalibration(_StickCalibration):
 class RightStickCalibration(_StickCalibration):
     @staticmethod
     def from_bytes(_9bytes):
-        h_center =           (_9bytes[1] << 8) & 0xF00 | _9bytes[0]
-        v_center =           (_9bytes[2] << 4) | (_9bytes[1] >> 4)
+        h_center = (_9bytes[1] << 8) & 0xF00 | _9bytes[0]
+        v_center = (_9bytes[2] << 4) | (_9bytes[1] >> 4)
         h_max_below_center = (_9bytes[4] << 8) & 0xF00 | _9bytes[3]
         v_max_below_center = (_9bytes[5] << 4) | (_9bytes[4] >> 4)
         h_max_above_center = (_9bytes[7] << 8) & 0xF00 | _9bytes[6]
@@ -334,7 +274,8 @@ class StickState:
 
     def is_center(self, radius=0):
         return self._calibration.h_center - radius <= self._h_stick <= self._calibration.h_center + radius and \
-               self._calibration.v_center - radius <= self._v_stick <= self._calibration.v_center + radius
+            self._calibration.v_center - \
+            radius <= self._v_stick <= self._calibration.v_center + radius
 
     def set_up(self):
         """
@@ -343,7 +284,8 @@ class StickState:
         if self._calibration is None:
             raise ValueError('No calibration data available.')
         self._h_stick = self._calibration.h_center
-        self._v_stick = self._calibration.v_center + self._calibration.v_max_above_center
+        self._v_stick = self._calibration.v_center + \
+            self._calibration.v_max_above_center
 
     def set_down(self):
         """
@@ -352,7 +294,8 @@ class StickState:
         if self._calibration is None:
             raise ValueError('No calibration data available.')
         self._h_stick = self._calibration.h_center
-        self._v_stick = self._calibration.v_center - self._calibration.v_max_below_center
+        self._v_stick = self._calibration.v_center - \
+            self._calibration.v_max_below_center
 
     def set_left(self):
         """
@@ -360,7 +303,8 @@ class StickState:
         """
         if self._calibration is None:
             raise ValueError('No calibration data available.')
-        self._h_stick = self._calibration.h_center - self._calibration.h_max_below_center
+        self._h_stick = self._calibration.h_center - \
+            self._calibration.h_max_below_center
         self._v_stick = self._calibration.v_center
 
     def set_right(self):
@@ -369,7 +313,8 @@ class StickState:
         """
         if self._calibration is None:
             raise ValueError('No calibration data available.')
-        self._h_stick = self._calibration.h_center + self._calibration.h_max_above_center
+        self._h_stick = self._calibration.h_center + \
+            self._calibration.h_max_above_center
         self._v_stick = self._calibration.v_center
 
     def set_calibration(self, calibration):

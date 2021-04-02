@@ -37,10 +37,6 @@ EVENT_SIZE = struct.calcsize(EVENT_FORMAT)
 async def joystick_poll(id):
     async with aiofiles.open(f"/dev/input/js{id}", mode="rb") as joystick:
         event = bytearray(EVENT_SIZE)
-        while True:
-            num_bytes_read = await joystick.readinto(event)
-            if num_bytes_read <= 0:
-                break
-            event_time, event_value, event_type, event_number = struct.unpack(
-                EVENT_FORMAT, event)
-            yield JoystickEvent(event_time, event_value, event_type, event_number)
+        while (await joystick.readinto(event) > 0):
+            time, value, type, number = struct.unpack(EVENT_FORMAT, event)
+            yield JoystickEvent(time, value, type, number)

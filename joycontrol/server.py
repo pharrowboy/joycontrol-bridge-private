@@ -10,7 +10,8 @@ from joycontrol.device import HidDevice
 from joycontrol.report import InputReport
 from joycontrol.transport import L2CAP_Transport
 
-PROFILE_PATH = pkg_resources.resource_filename('joycontrol', 'profile/sdp_record_hid.xml')
+PROFILE_PATH = pkg_resources.resource_filename(
+    'joycontrol', 'profile/sdp_record_hid.xml')
 logger = logging.getLogger(__name__)
 
 
@@ -42,13 +43,15 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
     protocol = protocol_factory()
 
     if reconnect_bt_addr is None:
-        ctl_sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
-        itr_sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        ctl_sock = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        itr_sock = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         ctl_sock.setblocking(False)
         itr_sock.setblocking(False)
         ctl_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         itr_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        
+
         try:
             hid = HidDevice(device_id=device_id)
 
@@ -76,7 +79,7 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
 
         hid.powered(True)
         hid.pairable(True)
-        
+
         # setting bluetooth adapter name to the device we wish to emulate
         await hid.set_name(protocol.controller.device_name())
 
@@ -93,7 +96,8 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
         # start advertising
         hid.discoverable()
 
-        logger.info('Waiting for Switch to connect... Please open the "Change Grip/Order" menu.')
+        logger.info(
+            'Waiting for Switch to connect... Please open the "Change Grip/Order" menu.')
 
         loop = asyncio.get_event_loop()
         client_ctl, ctl_address = await loop.sock_accept(ctl_sock)
@@ -108,15 +112,18 @@ async def create_hid_server(protocol_factory, ctl_psm=17, itr_psm=19, device_id=
 
     else:
         # Reconnection to reconnect_bt_addr
-        client_ctl = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
-        client_itr = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        client_ctl = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+        client_itr = socket.socket(
+            socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
         client_ctl.connect((reconnect_bt_addr, ctl_psm))
         client_itr.connect((reconnect_bt_addr, itr_psm))
         client_ctl.setblocking(False)
         client_itr.setblocking(False)
 
     # create transport for the established connection and activate the HID protocol
-    transport = L2CAP_Transport(asyncio.get_event_loop(), protocol, client_itr, client_ctl, 50, capture_file=capture_file)
+    transport = L2CAP_Transport(asyncio.get_event_loop(
+    ), protocol, client_itr, client_ctl, 50, capture_file=capture_file)
     protocol.connection_made(transport)
 
     # HACK: send some empty input reports until the Switch decides to reply
