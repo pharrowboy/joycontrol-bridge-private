@@ -10,17 +10,20 @@ import struct
 
 
 class JoystickEvent:
-    def __init__(self, timestamp, value, kind, number):
+    def __init__(self, timestamp, value, type, number):
         self.timestamp = timestamp
         self.value = value
-        self.kind = kind
+        self.type = type
         self.number = number
 
+    def __str__(self):
+        return "Time: {} | Value: {} | Type: {} | Number: {}".format(
+            self.timestamp, self.value, self.type, self.number)
 
-class EventType(enum.Enum):
-    EVENT_BUTTON = 0x01
-    EVENT_AXIS = 0x02
-    EVENT_INIT = 0x80
+
+EVENT_BUTTON = 0x01
+EVENT_AXIS = 0x02
+EVENT_INIT = 0x80
 
 
 # u32 time, s16 val, u8 type, u8 num
