@@ -58,7 +58,7 @@ async def main():
             what = analogs[event.number]
             value = max(int(normalize(event.value) + 1 / 2 * 4096) - 1, 0)
             print(value)
-            if direction == "h":
+            if what["direction"] == "h":
                 last_axis_x = value
             else:
                 last_axis_y = value
