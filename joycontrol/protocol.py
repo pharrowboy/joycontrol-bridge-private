@@ -70,6 +70,9 @@ class ControllerProtocol(BaseProtocol):
         await self._controller_state_sender
         self._controller_state_sender = None
 
+    async def flush(self):
+        write(self, self.bulk_report)
+
     async def write(self, input_report: InputReport):
         """
         Sets timer byte and current button state in the input report and sends it.
@@ -142,6 +145,7 @@ class ControllerProtocol(BaseProtocol):
         last_send_time = time.time()
 
         input_report = InputReport()
+        self.bulk_report = input_report
         input_report.set_vibrator_input()
         input_report.set_misc()
         if self._input_report_mode is None:

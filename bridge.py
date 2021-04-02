@@ -62,7 +62,7 @@ async def relais(protocol, controller_state):
         _timestamp, value, type, number = event
         if type == joystick.EVENT_BUTTON:
             controller_state.button_state.set_button(buttons[number], value)
-            await controller_state.send()
+            await protocol.flush()
         elif type == joystick.EVENT_AXIS:
             is_vertical = (number & 1)
             stick_state = sticks[number // 2]
@@ -87,7 +87,6 @@ async def _main(args):
         controller_state = protocol.get_controller_state()
         await controller_state.connect()
         logger.info("Connected!")
-        protocol.frequency.value = 0.004
         try:
             await relais(protocol, controller_state)
         finally:
