@@ -57,13 +57,13 @@ def init_relais():
     # todo: - button layout parsing from config file
     #       - basic GUI to show/generate config file + to start/stop the script
 
-    pygame.init()
-    pygame.joystick.init()
     while True:
         try:
+            pygame.init()
+            pygame.joystick.init()
             joystick = pygame.joystick.Joystick(0)
         except pygame.error:
-            print("Retrying...")
+            print("init_relais: Retrying...")
             time.sleep(1)
             continue
         break
@@ -99,14 +99,7 @@ async def relais(controller_state):
     buttons, analogs, hat_id = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
 
-    while True:
-        try:
-            joystick = pygame.joystick.Joystick(0)
-        except pygame.error:
-            print("Retrying...")
-            time.sleep(1)
-            continue
-        break
+    joystick = pygame.joystick.Joystick(0)
     joystick.init()
     skip = 0
     while True:
