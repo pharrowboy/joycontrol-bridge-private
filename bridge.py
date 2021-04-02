@@ -59,7 +59,14 @@ def init_relais():
 
     pygame.init()
     pygame.joystick.init()
-    joystick = pygame.joystick.Joystick(0)
+    while True:
+        try:
+            joystick = pygame.joystick.Joystick(0)
+        except pygame.error:
+            print("Retrying...")
+            time.sleep(200)
+            continue
+        break
     joystick.init()
 
     buttons = {
@@ -92,7 +99,14 @@ async def relais(controller_state):
     buttons, analogs, hat_id = init_relais()
     buttons = dict((val, key) for key, val in buttons.items())
 
-    joystick = pygame.joystick.Joystick(0)
+    while True:
+        try:
+            joystick = pygame.joystick.Joystick(0)
+        except pygame.error:
+            print("Retrying...")
+            time.sleep(200)
+            continue
+        break
     joystick.init()
     skip = 0
     while True:
