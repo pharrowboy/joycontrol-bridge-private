@@ -20,8 +20,8 @@ class JoystickEvent:
         return "Time: {} | Value: {} | Type: {} | Number: {}".format(
             self.timestamp, self.value, self.type, self.number)
 
-    def __iter__(self):
-        return (self.timestamp, self.value, self.type, self.number)
+    def __getitem__(self, key):
+        return (self.timestamp, self.value, self.type, self.number)[key]
 
 
 EVENT_BUTTON = 0x01
