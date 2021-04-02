@@ -386,4 +386,5 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--reconnect_bt_addr', type=str, default=None,
                         help='The Switch console Bluetooth address, for reconnecting as an already paired controller')
     args = parser.parse_args()
-    asyncio.run(_main(args))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_main(args))
