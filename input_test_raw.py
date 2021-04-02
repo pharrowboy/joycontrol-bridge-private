@@ -46,23 +46,20 @@ async def main():
         3: {"name": 'r_stick_analog', "direction": 'v'}
     }
 
-    last_axis_x = 2047
-    last_axis_y = 2047
-
+    last_axis = [ 2047, 2047, 2047, 2047 ]
     async for event in joystick.joystick_poll(0):
-        if DEBUG:
-            print(event)
         if event.type == joystick.EVENT_BUTTON:
             button_update(buttons[event.number], event.value)
         elif event.type == joystick.EVENT_AXIS:
             what = analogs[event.number]
             value = normalize(event.value)
-            print(value)
             if what["direction"] == "h":
-                last_axis_x = min(max(int((value + 1) / 2 * 4095), 0), 4095)
+                last_axis[event.number] = min(max(int((value + 1) / 2 * 4095), 0), 4095)
             else:
-                last_axis_y = min(max(int((-value + 1) / 2 * 4095), 0), 4095)
-            stick_update(what["name"], {"h": last_axis_x, "v": last_axis_y})
+                last_axis[event.number] = min(max(int((-value + 1) / 2 * 4095), 0), 4095)
+            base = event.number // 2
+            stick_update(what["name"], {"h": last_axis[base], "v": last_axis[base + 1]})
+
 
 
 if __name__ == '__main__':
