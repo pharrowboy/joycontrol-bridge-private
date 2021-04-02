@@ -86,10 +86,11 @@ def init_relais():
         'home':     10,
         'l_stick': 11,
         'r_stick': 12,
-        'up': 13,
-        'down': 14,
-        'left': 15,
-        'right': 16,
+        # HAT/POV Switches
+        # 'up': 13,
+        # 'down': 14,
+        # 'left': 15,
+        # 'right': 16,
     }
 
     analogs = {
@@ -118,7 +119,24 @@ async def relais(controller_state):
                 for button_id in list(buttons.keys()):
                     val = joystick.get_button(button_id)
                     await button_update(controller_state, buttons[button_id], val)
-            elif event.type == pygame.JOYAXISMOTION and skip % 5 == 0:
+            elif event.type == pygame.JOYHATMOTION:
+                hats = joystick.get_hat(hat_id)
+                if hats[0] == 0:  # left/right is unpressed
+                    await button_update(controller_state, 'left', 0)
+                    await button_update(controller_state, 'right', 0)
+                elif hats[0] == 1:  # right is pressed
+                    await button_update(controller_state, 'right', 1)
+                elif hats[0] == -1:  # left is pressed
+                    await button_update(controller_state, 'left', 1)
+
+                if hats[1] == 0:  # up/down is unpressed
+                    await button_update(controller_state, 'up', 0)
+                    await button_update(controller_state, 'down', 0)
+                elif hats[1] == 1:  # up is pressed
+                    await button_update(controller_state, 'up', 1)
+                elif hats[1] == -1:  # down is pressed
+                    await button_update(controller_state, 'down', 1)
+            elif event.type == pygame.JOYAXISMOTION:
                 for key in analogs.keys():
                     if key[-6:] == 'analog':  # analog sticks
                         val_h = joystick.get_axis(analogs[key][0])
