@@ -7,6 +7,8 @@ import os
 import sys
 import time
 
+from datetime import datetime, timedelta
+
 import aiofiles
 import hid
 import joystick
@@ -52,6 +54,9 @@ async def init_relais():
     return buttons, 0
 
 
+dirty = False
+
+
 async def relais(protocol, controller_state):
     def normalize(value):
         return max(min(value, 32767), -32767) / 32767
@@ -62,7 +67,6 @@ async def relais(protocol, controller_state):
     buttons, id = await init_relais()
     sticks = (controller_state.l_stick_state, controller_state.r_stick_state)
     logger.info("Polling Joystick...")
-    writer = None
     async for event in joystick.joystick_poll(id):
         if protocol.ended:
             break
@@ -77,9 +81,20 @@ async def relais(protocol, controller_state):
                 stick_state.set_v(clamp(int((-axis + 1) / 2 * 4095)))
             else:
                 stick_state.set_h(clamp(int((axis + 1) / 2 * 4095)))
-        if writer is None or writer.done():
-            writer = asyncio.ensure_future(protocol.flush())
+        dirty = True
     logger.info("Polling Ended")
+
+
+async def send_at_60Hz(protocol):
+    while True:
+        if dirty:
+            start = time.time()
+            if not await protocol.flush():
+                return
+            end = time.time()
+            sleep = 0.0166666667 - (end - start)
+            await asyncio.sleep(max(sleep, 0))
+    logger.info("Synchronization Ended")
 
 
 async def monitor_throughput(throughput):
