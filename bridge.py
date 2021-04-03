@@ -83,15 +83,17 @@ async def relais(protocol, controller_state):
 
 
 async def send_at_60Hz(protocol):
+    delay_base = 0.0166666667
     while True:
+        sleep = delay_base
         if protocol.dirty:
             start = time.time()
             if not await protocol.flush():
                 return
             end = time.time()
-            sleep = 0.0166666667 - (end - start)
-            await asyncio.sleep(max(sleep, 0))
+            sleep -= (end - start)
             protocol.dirty = False
+        await asyncio.sleep(max(sleep, 0))
     logger.info("Synchronization Ended")
 
 
