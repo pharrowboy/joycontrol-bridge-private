@@ -11,7 +11,7 @@ class ThroughputMonitor:
         self.start_time = datetime.now()
         self.current_count = 0
         self.last_time = self.start_time
-        self.last_count = self.start_count
+        self.last_count = 0
         self.counts_sec = 0
 
     def increment(self):
