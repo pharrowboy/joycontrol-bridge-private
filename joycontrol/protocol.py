@@ -48,8 +48,11 @@ class ControllerProtocol(BaseProtocol):
         # This event gets triggered once the Switch assigns a player number to the controller and accepts user inputs
         self.sig_set_player_lights = asyncio.Event()
 
+        # send state at 66Hz
         self.frequency = Value("f")
         self.frequency.value = 0.015
+
+        self.ended = False
 
     async def send_controller_state(self):
         """
@@ -125,6 +128,7 @@ class ControllerProtocol(BaseProtocol):
             logger.error('Connection lost.')
             asyncio.ensure_future(self.transport.close())
             self.transport = None
+            self.ended = True
 
             if self._controller_state_sender is not None:
                 self._controller_state_sender.set_exception(NotConnectedError)
@@ -143,7 +147,6 @@ class ControllerProtocol(BaseProtocol):
             raise ValueError(
                 'Transport must be paused in full input report mode')
 
-        # send state at 66Hz
         await asyncio.sleep(self.frequency.value)
         last_send_time = time.time()
 
@@ -162,22 +165,14 @@ class ControllerProtocol(BaseProtocol):
                 reply_send = False
                 if reader.done():
                     data = await reader
-
                     reader = asyncio.ensure_future(self.transport.read())
-
                     try:
                         report = OutputReport(list(data))
                         output_report_id = report.get_output_report_id()
-
                         if output_report_id == OutputReportID.RUMBLE_ONLY:
-                            # TODO
                             pass
                         elif output_report_id == OutputReportID.SUB_COMMAND:
                             reply_send = await self._reply_to_sub_command(report)
-                        elif output_report_id == OutputReportID.REQUEST_IR_NFC_MCU:
-                            # TODO NFC
-                            raise NotImplementedError(
-                                'NFC communictation is not implemented.')
                         else:
                             logger.warning(
                                 f'Report unknown output report "{output_report_id}" - IGNORE')
@@ -194,55 +189,42 @@ class ControllerProtocol(BaseProtocol):
                     # write 0x30 input report.
                     # TODO: set some sensor data
                     input_report.set_6axis_data()
-
                     # TODO NFC - set nfc data
                     if input_report.get_input_report_id() == 0x31:
                         pass
-
                     await self.write(input_report)
 
                 # calculate delay
                 current_time = time.time()
-                time_delta = time.time() - last_send_time
+                time_delta = current_time - last_send_time
                 sleep_time = self.frequency.value - time_delta
                 last_send_time = current_time
-
                 if sleep_time < 0:
-                    # logger.warning(f'Code is running {abs(sleep_time)} s too slow!')
                     sleep_time = 0
-
                 await asyncio.sleep(sleep_time)
 
         except NotConnectedError as err:
-            # Stop 0x30 input report mode if disconnected.
             logger.error(err)
         finally:
-            # cleanup
             self._input_report_mode = None
-            # cancel the reader
             with suppress(asyncio.CancelledError, NotConnectedError):
                 if reader.cancel():
                     await reader
 
     async def report_received(self, data: Union[bytes, Text], addr: Tuple[str, int]) -> None:
         self._data_received.set()
-
         try:
             report = OutputReport(list(data))
         except ValueError as v_err:
             logger.warning(f'Report parsing error "{v_err}" - IGNORE')
             return
-
         try:
             output_report_id = report.get_output_report_id()
         except NotImplementedError as err:
             logger.warning(err)
             return
-
         if output_report_id == OutputReportID.SUB_COMMAND:
             await self._reply_to_sub_command(report)
-        # elif output_report_id == OutputReportID.RUMBLE_ONLY:
-        #    pass
         else:
             logger.warning(
                 f'Output report {output_report_id} not implemented - ignoring')
@@ -435,10 +417,8 @@ class ControllerProtocol(BaseProtocol):
         input_report = InputReport()
         input_report.set_input_report_id(0x21)
         input_report.set_misc()
-
         input_report.set_ack(0x80)
         input_report.reply_to_subcommand_id(SubCommand.ENABLE_VIBRATION.value)
-
         await self.write(input_report)
 
     async def _command_set_nfc_ir_mcu_config(self, sub_command_data):
@@ -446,11 +426,9 @@ class ControllerProtocol(BaseProtocol):
         input_report = InputReport()
         input_report.set_input_report_id(0x21)
         input_report.set_misc()
-
         input_report.set_ack(0xA0)
         input_report.reply_to_subcommand_id(
             SubCommand.SET_NFC_IR_MCU_CONFIG.value)
-
         data = [1, 0, 255, 0, 8, 0, 27, 1, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200]
         for i in range(len(data)):

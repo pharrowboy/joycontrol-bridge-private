@@ -16,7 +16,8 @@ class HidDevice:
         bus = dbus.SystemBus()
 
         # Get Bluetooth adapter from dbus interface
-        manager = dbus.Interface(bus.get_object('org.bluez', '/'), 'org.freedesktop.DBus.ObjectManager')
+        manager = dbus.Interface(bus.get_object(
+            'org.bluez', '/'), 'org.freedesktop.DBus.ObjectManager')
         for path, ifaces in manager.GetManagedObjects().items():
             adapter_info = ifaces.get('org.bluez.Adapter1')
             if adapter_info is None:
@@ -27,7 +28,8 @@ class HidDevice:
                 self.address = adapter_info['Address']
                 self._adapter_name = path.split('/')[-1]
 
-                self.properties = dbus.Interface(self.adapter, 'org.freedesktop.DBus.Properties')
+                self.properties = dbus.Interface(
+                    self.adapter, 'org.freedesktop.DBus.Properties')
                 break
         else:
             raise ValueError(f'Adapter {device_id} not found.')
@@ -45,7 +47,8 @@ class HidDevice:
         """
         Make adapter discoverable, starts advertising.
         """
-        self.properties.Set(self.adapter.dbus_interface, 'Discoverable', boolean)
+        self.properties.Set(self.adapter.dbus_interface,
+                            'Discoverable', boolean)
 
     def pairable(self, boolean=True):
         """
@@ -82,7 +85,8 @@ class HidDevice:
                 'RequireAuthorization': False
             }
             bus = dbus.SystemBus()
-            manager = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
+            manager = dbus.Interface(bus.get_object(
+                "org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
             manager.RegisterProfile(HID_PATH, _uuid, opts)
 
         return _uuid

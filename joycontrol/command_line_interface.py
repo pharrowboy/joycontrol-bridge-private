@@ -95,4 +95,3 @@ class CLI:
             print(message)
 
         return dep_printer
-

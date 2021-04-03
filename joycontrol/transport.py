@@ -16,26 +16,19 @@ class NotConnectedError(ConnectionResetError):
 class L2CAP_Transport(asyncio.Transport):
     def __init__(self, loop, protocol, itr_sock, ctr_sock, read_buffer_size, capture_file=None) -> None:
         super(L2CAP_Transport, self).__init__()
-
         self._loop = loop
         self._protocol = protocol
-
         self._itr_sock = itr_sock
         self._ctr_sock = ctr_sock
-
         self._read_buffer_size = read_buffer_size
-
+        self._capture_file = capture_file
         self._extra_info = {
             'peername': self._itr_sock.getpeername(),
             'sockname': self._itr_sock.getsockname(),
             'socket': self._itr_sock
         }
-
         self._is_closing = False
         self._is_reading = asyncio.Event()
-
-        self._capture_file = capture_file
-
         # start underlying reader
         self._read_thread = None
         self._is_reading.set()
@@ -57,11 +50,10 @@ class L2CAP_Transport(asyncio.Transport):
         """
         if self._read_thread is not None:
             raise ValueError('Reader is already running.')
-
         self._read_thread = asyncio.ensure_future(self._reader())
-
         # Create callback in case the reader is failing
-        callback = utils.create_error_check_callback(ignore=asyncio.CancelledError)
+        callback = utils.create_error_check_callback(
+            ignore=asyncio.CancelledError)
         self._read_thread.add_done_callback(callback)
 
     async def set_reader(self, reader: asyncio.Future):
@@ -78,11 +70,10 @@ class L2CAP_Transport(asyncio.Transport):
                     await self._read_thread
                 except asyncio.CancelledError:
                     pass
-
         # Create callback for debugging in case the reader is failing
-        err_callback = utils.create_error_check_callback(ignore=asyncio.CancelledError)
+        err_callback = utils.create_error_check_callback(
+            ignore=asyncio.CancelledError)
         reader.add_done_callback(err_callback)
-
         self._read_thread = reader
 
     def get_reader(self):

@@ -8,6 +8,7 @@ class InputReport:
     Class to create Input Reports. Reference:
     https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md
     """
+
     def __init__(self, data=None):
         if not data:
             self.data = [0x00] * 364
@@ -84,7 +85,8 @@ class InputReport:
         :param right_stick_bytes: 3 bytes
         """
         if len(right_stick_bytes) != 3:
-            raise ValueError('Right stick status data must be exactly 3 bytes!')
+            raise ValueError(
+                'Right stick status data must be exactly 3 bytes!')
         self.data[10:13] = right_stick_bytes
 
     def set_vibrator_input(self):
@@ -132,7 +134,8 @@ class InputReport:
         try:
             return SubCommand(self.data[15])
         except ValueError:
-            raise NotImplementedError(f'Sub command id {hex(self.data[11])} not implemented')
+            raise NotImplementedError(
+                f'Sub command id {hex(self.data[11])} not implemented')
 
     def sub_0x02_device_info(self, mac, fm_version=(0x04, 0x00), controller=Controller.JOYCON_L):
         """
@@ -160,7 +163,8 @@ class InputReport:
 
     def sub_0x10_spi_flash_read(self, offset, size, data):
         if len(data) != size:
-            raise ValueError(f'Length of data {len(data)} does not match size {size}')
+            raise ValueError(
+                f'Length of data {len(data)} does not match size {size}')
         if size > 0x1D:
             raise ValueError(f'Size can not exceed {0x1D}')
 
@@ -249,7 +253,8 @@ class OutputReport:
         try:
             return OutputReportID(self.data[1])
         except ValueError:
-            raise NotImplementedError(f'Output report id {hex(self.data[1])} not implemented')
+            raise NotImplementedError(
+                f'Output report id {hex(self.data[1])} not implemented')
 
     def set_output_report_id(self, _id):
         if isinstance(_id, OutputReportID):
@@ -275,7 +280,8 @@ class OutputReport:
         try:
             return SubCommand(self.data[11])
         except ValueError:
-            raise NotImplementedError(f'Sub command id {hex(self.data[11])} not implemented')
+            raise NotImplementedError(
+                f'Sub command id {hex(self.data[11])} not implemented')
 
     def set_sub_command(self, _id):
         if isinstance(_id, SubCommand):
@@ -303,7 +309,8 @@ class OutputReport:
         if size > 0x1D:
             raise ValueError(f'Size read can not exceed {0x1D}')
         if offset+size > 0x80000:
-            raise ValueError(f'Given address range exceeds max address {0x80000-1}')
+            raise ValueError(
+                f'Given address range exceeds max address {0x80000-1}')
 
         self.set_output_report_id(OutputReportID.SUB_COMMAND)
         self.set_sub_command(SubCommand.SPI_FLASH_READ)

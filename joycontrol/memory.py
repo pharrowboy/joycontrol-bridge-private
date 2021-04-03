@@ -11,16 +11,19 @@ class FlashMemory:
             default_stick_cal = True
 
         if len(spi_flash_memory_data) != size:
-            raise ValueError(f'Given data size {len(spi_flash_memory_data)} does not match size {size}.')
+            raise ValueError(
+                f'Given data size {len(spi_flash_memory_data)} does not match size {size}.')
         if isinstance(spi_flash_memory_data, bytes):
             spi_flash_memory_data = list(spi_flash_memory_data)
 
         # set default controller stick calibration
         if default_stick_cal:
             # L-stick factory calibration
-            spi_flash_memory_data[0x603D:0x6046] = [0x00, 0x07, 0x70, 0x00, 0x08, 0x80, 0x00, 0x07, 0x70]
+            spi_flash_memory_data[0x603D:0x6046] = [
+                0x00, 0x07, 0x70, 0x00, 0x08, 0x80, 0x00, 0x07, 0x70]
             # R-stick factory calibration
-            spi_flash_memory_data[0x6046:0x604F] = [0x00, 0x08, 0x80, 0x00, 0x07, 0x70, 0x00, 0x07, 0x70]
+            spi_flash_memory_data[0x6046:0x604F] = [
+                0x00, 0x08, 0x80, 0x00, 0x07, 0x70, 0x00, 0x07, 0x70]
 
         self.data = spi_flash_memory_data
 
