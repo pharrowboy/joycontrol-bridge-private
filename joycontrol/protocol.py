@@ -179,9 +179,6 @@ class ControllerProtocol(BaseProtocol):
             logger.error(err)
         finally:
             self._input_report_mode = None
-            with suppress(asyncio.CancelledError, NotConnectedError):
-                if reader.cancel():
-                    await reader
 
     async def report_received(self, data: Union[bytes, Text], addr: Tuple[str, int]) -> None:
         self._data_received.set()
