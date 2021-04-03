@@ -56,7 +56,7 @@ async def relais(protocol, controller_state):
     def normalize(value):
         return max(min(value, 32767), -32767) / 32767
 
-    def clamp(value, minv, maxv):
+    def clamp(value, minv=0, maxv=4095):
         return min(max(value, minv), maxv)
 
     buttons, id = await init_relais()
