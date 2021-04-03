@@ -152,10 +152,9 @@ class ControllerProtocol(BaseProtocol):
         input_report.set_vibrator_input()
         input_report.set_misc()
 
-        await asyncio.sleep()
 
-        if self._input_report_mode is None:
-            raise ValueError('Input report mode is not set.')
+        while self._input_report_mode is None:
+            await asyncio.sleep(0)
         input_report.set_input_report_id(self._input_report_mode)
 
         try:
