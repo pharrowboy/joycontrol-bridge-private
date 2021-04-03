@@ -11,7 +11,6 @@ class AsyncHID(hid.Device):
     def __init__(self, *args, loop=asyncio.get_event_loop(), **kwargs):
         super().__init__(*args, **kwargs)
         self._loop = loop
-
         self._write_lock = asyncio.Lock()
         self._read_lock = asyncio.Lock()
 

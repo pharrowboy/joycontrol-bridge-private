@@ -147,9 +147,6 @@ class ControllerProtocol(BaseProtocol):
             raise ValueError(
                 'Transport must be paused in full input report mode')
 
-        await asyncio.sleep(self.frequency.value)
-        last_send_time = time.time()
-
         input_report = InputReport()
         self.bulk_report = input_report
         input_report.set_vibrator_input()
@@ -158,51 +155,24 @@ class ControllerProtocol(BaseProtocol):
             raise ValueError('Input report mode is not set.')
         input_report.set_input_report_id(self._input_report_mode)
 
-        reader = asyncio.ensure_future(self.transport.read())
-
         try:
             while True:
-                reply_send = False
-                if reader.done():
-                    data = await reader
-                    reader = asyncio.ensure_future(self.transport.read())
-                    try:
-                        report = OutputReport(list(data))
-                        output_report_id = report.get_output_report_id()
-                        if output_report_id == OutputReportID.RUMBLE_ONLY:
-                            pass
-                        elif output_report_id == OutputReportID.SUB_COMMAND:
-                            reply_send = await self._reply_to_sub_command(report)
-                        else:
-                            logger.warning(
-                                f'Report unknown output report "{output_report_id}" - IGNORE')
-                    except ValueError as v_err:
-                        logger.warning(
-                            f'Report parsing error "{v_err}" - IGNORE')
-                    except NotImplementedError as err:
-                        logger.warning(err)
-
-                if reply_send:
-                    # Hack: Adding a delay here to avoid flooding during pairing
-                    await asyncio.sleep(0.3)
-                else:
-                    # write 0x30 input report.
-                    # TODO: set some sensor data
-                    input_report.set_6axis_data()
-                    # TODO NFC - set nfc data
-                    if input_report.get_input_report_id() == 0x31:
+                data = await self.transport.read()
+                try:
+                    report = OutputReport(list(data))
+                    output_report_id = report.get_output_report_id()
+                    if output_report_id == OutputReportID.RUMBLE_ONLY:
                         pass
-                    await self.write(input_report)
-
-                # calculate delay
-                current_time = time.time()
-                time_delta = current_time - last_send_time
-                sleep_time = self.frequency.value - time_delta
-                last_send_time = current_time
-                if sleep_time < 0:
-                    sleep_time = 0
-                await asyncio.sleep(sleep_time)
-
+                    elif output_report_id == OutputReportID.SUB_COMMAND:
+                        if await self._reply_to_sub_command(report):
+                            asyncio.sleep(0.1)
+                    else:
+                        logger.warning(
+                            f'Report unknown output report "{output_report_id}" - IGNORE')
+                except ValueError as v_err:
+                    logger.warning(f'Report parsing error "{v_err}" - IGNORE')
+                except NotImplementedError as err:
+                    logger.warning(err)
         except NotConnectedError as err:
             logger.error(err)
         finally:
@@ -250,31 +220,22 @@ class ControllerProtocol(BaseProtocol):
             # answer to sub command
             if sub_command == SubCommand.REQUEST_DEVICE_INFO:
                 await self._command_request_device_info(sub_command_data)
-
             elif sub_command == SubCommand.SET_SHIPMENT_STATE:
                 await self._command_set_shipment_state(sub_command_data)
-
             elif sub_command == SubCommand.SPI_FLASH_READ:
                 await self._command_spi_flash_read(sub_command_data)
-
             elif sub_command == SubCommand.SET_INPUT_REPORT_MODE:
                 await self._command_set_input_report_mode(sub_command_data)
-
             elif sub_command == SubCommand.TRIGGER_BUTTONS_ELAPSED_TIME:
                 await self._command_trigger_buttons_elapsed_time(sub_command_data)
-
             elif sub_command == SubCommand.ENABLE_6AXIS_SENSOR:
                 await self._command_enable_6axis_sensor(sub_command_data)
-
             elif sub_command == SubCommand.ENABLE_VIBRATION:
                 await self._command_enable_vibration(sub_command_data)
-
             elif sub_command == SubCommand.SET_NFC_IR_MCU_CONFIG:
                 await self._command_set_nfc_ir_mcu_config(sub_command_data)
-
             elif sub_command == SubCommand.SET_NFC_IR_MCU_STATE:
                 await self._command_set_nfc_ir_mcu_state(sub_command_data)
-
             elif sub_command == SubCommand.SET_PLAYER_LIGHTS:
                 await self._command_set_player_lights(sub_command_data)
             else:

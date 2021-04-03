@@ -55,6 +55,10 @@ async def init_relais():
 async def relais(protocol, controller_state):
     def normalize(value):
         return max(min(value, 32767), -32767) / 32767
+
+    def clamp(value, minv, maxv):
+        return min(max(value, minv), maxv)
+
     buttons, id = await init_relais()
     sticks = (controller_state.l_stick_state, controller_state.r_stick_state)
     logger.info("Polling Joystick...")
@@ -70,11 +74,9 @@ async def relais(protocol, controller_state):
             stick_state = sticks[number // 2]
             axis = normalize(value)
             if is_vertical:
-                stick_state.set_v(
-                    min(max(int((-axis + 1) / 2 * 4095), 0), 4095))
+                stick_state.set_v(clamp(int((-axis + 1) / 2 * 4095)))
             else:
-                stick_state.set_h(
-                    min(max(int((axis + 1) / 2 * 4095), 0), 4095))
+                stick_state.set_h(clamp(int((axis + 1) / 2 * 4095)))
         if writer is None or writer.done():
             writer = asyncio.ensure_future(protocol.flush())
     print("Polling Ended")
