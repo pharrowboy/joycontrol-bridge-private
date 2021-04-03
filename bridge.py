@@ -79,7 +79,14 @@ async def relais(protocol, controller_state):
                 stick_state.set_h(clamp(int((axis + 1) / 2 * 4095)))
         if writer is None or writer.done():
             writer = asyncio.ensure_future(protocol.flush())
-    print("Polling Ended")
+    logger.info("Polling Ended")
+
+
+async def monitor_throughput(throughput):
+    while True:
+        await asyncio.sleep(3)
+        throughput.update()
+        logger.info("{} Packets/sec".format(throughput.counts_sec))
 
 
 async def _main(args):
@@ -96,6 +103,9 @@ async def _main(args):
         logger.info("Connected!")
         # slow down reading
         protocol.frequency.value = 0.3
+
+        asyncio.ensure_future(monitor_throughput(protocol.throughput))
+
         try:
             await relais(protocol, controller_state)
         finally:

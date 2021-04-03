@@ -12,6 +12,7 @@ from joycontrol.controller_state import ControllerState
 from joycontrol.memory import FlashMemory
 from joycontrol.report import OutputReport, SubCommand, InputReport, OutputReportID
 from joycontrol.transport import NotConnectedError
+from joycontrol.throughput import ThroughputMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,8 @@ class ControllerProtocol(BaseProtocol):
         self.frequency.value = 0.015
 
         self.ended = False
+
+        self.throughput = ThroughputMonitor()
 
     async def send_controller_state(self):
         """
@@ -108,6 +111,7 @@ class ControllerProtocol(BaseProtocol):
         await self.transport.write(input_report)
 
         self._controller_state.sig_is_send.set()
+        throughput.increment()
 
     def get_controller_state(self) -> ControllerState:
         return self._controller_state
