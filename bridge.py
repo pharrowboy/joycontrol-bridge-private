@@ -94,6 +94,7 @@ async def send_at_60Hz(protocol):
             end = time.time()
             sleep = 0.0166666667 - (end - start)
             await asyncio.sleep(max(sleep, 0))
+            dirty = False
     logger.info("Synchronization Ended")
 
 
@@ -120,6 +121,7 @@ async def _main(args):
         protocol.frequency.value = 0.3
 
         asyncio.ensure_future(monitor_throughput(protocol.throughput))
+        asyncio.ensure_future(send_at_60Hz(protocol))
 
         try:
             await relais(protocol, controller_state)
