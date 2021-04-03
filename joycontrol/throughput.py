@@ -22,7 +22,7 @@ class ThroughputMonitor:
         now = datetime.now()
         count = self.current_count
         if (now - self.start_time) >= self.interval:
-            self.counts_sec = count / self.interval.seconds()
+            self.counts_sec = count / self.interval.seconds
             self.start_time = now
             self.current_count = 0
         self.last_time = now
