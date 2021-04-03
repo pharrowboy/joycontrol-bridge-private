@@ -111,7 +111,7 @@ class ControllerProtocol(BaseProtocol):
         await self.transport.write(input_report)
 
         self._controller_state.sig_is_send.set()
-        throughput.increment()
+        self.throughput.increment()
 
     def get_controller_state(self) -> ControllerState:
         return self._controller_state
