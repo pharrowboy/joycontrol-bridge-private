@@ -59,8 +59,9 @@ async def main():
             else:
                 last_axis[number] = min(max(int((-axis + 1) / 2 * 4095), 0), 4095)
             base = number - (number & 1)
-            print(base)
-            print(base + 1)
+            if DEBUG:
+                print(base)
+                print(base + 1)
             stick_update(what["name"], {"h": last_axis[base], "v": last_axis[base + 1]})
 
 
