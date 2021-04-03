@@ -56,6 +56,7 @@ class ControllerProtocol(BaseProtocol):
         self.ended = False
 
         self.throughput = ThroughputMonitor()
+        self.dirty = False
 
     async def send_controller_state(self):
         """

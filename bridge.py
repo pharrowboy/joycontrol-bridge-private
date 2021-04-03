@@ -54,9 +54,6 @@ async def init_relais():
     return buttons, 0
 
 
-dirty = False
-
-
 async def relais(protocol, controller_state):
     def normalize(value):
         return max(min(value, 32767), -32767) / 32767
@@ -81,20 +78,20 @@ async def relais(protocol, controller_state):
                 stick_state.set_v(clamp(int((-axis + 1) / 2 * 4095)))
             else:
                 stick_state.set_h(clamp(int((axis + 1) / 2 * 4095)))
-        dirty = True
+        protocol.dirty = True
     logger.info("Polling Ended")
 
 
 async def send_at_60Hz(protocol):
     while True:
-        if dirty:
+        if protocol.dirty:
             start = time.time()
             if not await protocol.flush():
                 return
             end = time.time()
             sleep = 0.0166666667 - (end - start)
             await asyncio.sleep(max(sleep, 0))
-            dirty = False
+            protocol.dirty = False
     logger.info("Synchronization Ended")
 
 
