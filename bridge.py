@@ -68,8 +68,10 @@ async def relais(protocol, controller_state):
         if protocol.ended:
             break
         _timestamp, value, type, number = event
+        protocol.dirty = True
         if type == joystick.EVENT_BUTTON:
             controller_state.button_state.set_button(buttons[number], value)
+            await asyncio.sleep(0) # Yield
         elif type == joystick.EVENT_AXIS:
             is_vertical = (number & 1)
             stick_state = sticks[number // 2]
@@ -78,22 +80,16 @@ async def relais(protocol, controller_state):
                 stick_state.set_v(clamp(int((-axis + 1) / 2 * 4095)))
             else:
                 stick_state.set_h(clamp(int((axis + 1) / 2 * 4095)))
-        protocol.dirty = True
     logger.info("Polling Ended")
 
 
 async def send_at_60Hz(protocol):
-    delay_base = 0.0166666667
     while True:
-        sleep = delay_base
         if protocol.dirty:
-            start = time.time()
             if not await protocol.flush():
                 return
-            end = time.time()
-            sleep -= (end - start)
             protocol.dirty = False
-        await asyncio.sleep(max(sleep, 0))
+        await asyncio.sleep(0.016)
     logger.info("Synchronization Ended")
 
 
